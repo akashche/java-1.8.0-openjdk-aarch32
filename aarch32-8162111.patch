@@ -1,0 +1,10 @@
+--- openjdk/hotspot/src/cpu/aarch32/vm/templateInterpreter_aarch32.cpp	2016-07-21 17:29:14.000000000 +0300
++++ openjdk/hotspot/src/cpu/aarch32/vm/templateInterpreter_aarch32.cpp	2016-07-21 17:29:14.000000000 +0300
+@@ -1996,6 +1996,7 @@
+   __ push(state);
+   __ push(RegSet::range(r0, r12), sp);
+   __ mov(c_rarg2, r0);  // Pass itos
++  __ mov(c_rarg3, r1);  // Pass ltos/dtos high part
+   __ call_VM(noreg,
+              CAST_FROM_FN_PTR(address, SharedRuntime::trace_bytecode),
+              c_rarg1, c_rarg2, c_rarg3);
