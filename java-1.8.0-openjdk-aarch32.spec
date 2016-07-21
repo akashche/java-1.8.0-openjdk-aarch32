@@ -152,7 +152,7 @@
 # note, following three variables are sedded from update_sources if used correctly. Hardcode them rather there.
 %global project         aarch32-port
 %global repo            jdk8u
-%global revision        jdk8u91-b14-aarch32-160510
+%global revision        tip
 # eg # jdk8u60-b27 -> jdk8u60 or # aarch64-jdk8u60-b27 -> aarch64-jdk8u60  (dont forget spec escape % by %%)
 %global whole_update    %(VERSION=%{revision}; echo ${VERSION%%-*})
 # eg  jdk8u60 -> 60 or aarch64-jdk8u60 -> 60
@@ -737,7 +737,8 @@ Obsoletes: java-1.7.0-openjdk-accessibility%1
 
 Name:    java-%{javaver}-%{origin}-aarch32
 Version: %{javaver}.%{updatever}
-Release: 1.%{buildver}%{?dist}
+%global aarch32_date_tag 201607210
+Release: %{aarch32_date_tag}.%{buildver}%{?dist}
 # java-1.5.0-ibm from jpackage.org set Epoch to 1 for unknown reasons,
 # and this change was brought into RHEL-4.  java-1.5.0-ibm packages
 # also included the epoch in their virtual provides.  This created a
@@ -1251,7 +1252,7 @@ bash ../../configure \
 %endif
     --disable-zip-debug-info \
     --with-milestone="fcs" \
-    --with-update-version=%{updatever} \
+    --with-update-version=%{updatever}%{aarch32_date_tag} \
     --with-build-number=%{buildver} \
     --with-boot-jdk=/usr/lib/jvm/java-openjdk \
     --with-debug-level=$debugbuild \
