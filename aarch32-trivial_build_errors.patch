@@ -1,0 +1,50 @@
+# HG changeset patch
+# User Anton Kozlov <akozlov@azul.com>
+# Date 1469150823 -10800
+#      Fri Jul 22 04:27:03 2016 +0300
+# Node ID 7adc56f3c2e36f18ff159e7f193f41829ae78b59
+# Parent  d37140bc27f34fddf2f3b9fd67342142581e6e22
+Fix trivial errors in aarch32: signed vs unsigned compare, constant not fit
+
+diff -r d37140bc27f3 -r 7adc56f3c2e3 src/cpu/aarch32/vm/nativeInst_aarch32.cpp
+--- openjdk/hotspot/src/cpu/aarch32/vm/nativeInst_aarch32.cpp	Wed Jul 20 18:57:34 2016 +0300
++++ openjdk/hotspot/src/cpu/aarch32/vm/nativeInst_aarch32.cpp	Fri Jul 22 04:27:03 2016 +0300
+@@ -492,7 +492,7 @@
+   bool a2 = Instruction_aarch32::extract(uint_at(0), 15, 12) == (unsigned)dst;
+   bool a3 = Instruction_aarch32::extract(uint_at(0), 11, 0) == ((unsigned)imm & 0xfff);
+   bool a4 = Instruction_aarch32::extract(uint_at(0), 19, 16) == ((unsigned)imm >> 12);
+-  bool a5 = Instruction_aarch32::extract(uint_at(0), 31, 28) == cond;
++  bool a5 = Instruction_aarch32::extract(uint_at(0), 31, 28) == (unsigned)cond;
+ 
+   return a1 && a2 && a3 && a4 && a5;
+ }
+@@ -502,7 +502,7 @@
+   bool a2 = Instruction_aarch32::extract(uint_at(0), 15, 12) == (unsigned)dst;
+   bool a3 = Instruction_aarch32::extract(uint_at(0), 11, 0) == ((unsigned)imm & 0xfff);
+   bool a4 = Instruction_aarch32::extract(uint_at(0), 19, 16) == ((unsigned)imm >> 12);
+-  bool a5 = Instruction_aarch32::extract(uint_at(0), 31, 28) == cond;
++  bool a5 = Instruction_aarch32::extract(uint_at(0), 31, 28) == (unsigned)cond;
+ 
+   return a1 && a2 && a3 && a4 && a5;
+ }
+@@ -525,7 +525,7 @@
+     bool a3 = Instruction_aarch32::extract(uint_at(0), 20, 20) == 1;
+     bool a4 = Instruction_aarch32::extract(uint_at(0), 22, 22) == 0;
+     bool a5 = Instruction_aarch32::extract(uint_at(0), 27, 25) == 0b010;
+-    bool a6 = Instruction_aarch32::extract(uint_at(0), 31, 28) == cond;
++    bool a6 = Instruction_aarch32::extract(uint_at(0), 31, 28) == (unsigned)cond;
+ 
+     return a1 && a2 && a3 && a4 && a5 && a6;
+ }
+diff -r d37140bc27f3 -r 7adc56f3c2e3 src/os_cpu/linux_aarch32/vm/os_linux_aarch32.cpp
+--- openjdk/hotspot/src/os_cpu/linux_aarch32/vm/os_linux_aarch32.cpp	Wed Jul 20 18:57:34 2016 +0300
++++ openjdk/hotspot/src/os_cpu/linux_aarch32/vm/os_linux_aarch32.cpp	Fri Jul 22 04:27:03 2016 +0300
+@@ -94,7 +94,7 @@
+   // even in its subfields (as defined by the CPU immediate fields,
+   // if the CPU splits constants across multiple instructions).
+ 
+-  return (char*) 0xffffffffffff;
++  return (char*) 0xfffffffful;
+ }
+ 
+ void os::initialize_thread(Thread *thr) {
