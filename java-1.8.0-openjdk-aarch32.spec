@@ -737,7 +737,7 @@ Obsoletes: java-1.7.0-openjdk-accessibility%1
 
 Name:    java-%{javaver}-%{origin}-aarch32
 Version: %{javaver}.%{updatever}
-%global aarch32_date_tag 201608090
+%global aarch32_date_tag 201608091
 Release: %{aarch32_date_tag}.%{buildver}%{?dist}
 # java-1.5.0-ibm from jpackage.org set Epoch to 1 for unknown reasons,
 # and this change was brought into RHEL-4.  java-1.5.0-ibm packages
@@ -872,7 +872,7 @@ Patch201: system-libjpeg.patch
 Patch300: jstack-pr1845.patch
 
 # aarch32 patches
-#Patch1002: aarch32-8162111.patch
+Patch1001: aarch32-8163469.patch
 # end aarch32 patches
 
 BuildRequires: autoconf
@@ -1167,6 +1167,7 @@ sh %{SOURCE12}
 %patch516
 
 # aarch32 patches
+%patch1001
 # end aarch32 patches
 
 # Extract systemtap tapsets
