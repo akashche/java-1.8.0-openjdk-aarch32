@@ -84,6 +84,12 @@
 %global NSS_LIBDIR %(pkg-config --variable=libdir nss)
 %global NSS_LIBS %(pkg-config --libs nss)
 %global NSS_CFLAGS %(pkg-config --cflags nss-softokn)
+# see https://bugzilla.redhat.com/show_bug.cgi?id=1332456
+%global NSSSOFTOKN_BUILDTIME_NUMBER %(pkg-config --modversion nss-softokn || : )
+%global NSS_BUILDTIME_NUMBER %(pkg-config --modversion nss || : )
+#this is worakround for processing of requires during srpm creation
+%global NSSSOFTOKN_BUILDTIME_VERSION %(if [ "x%{NSSSOFTOKN_BUILDTIME_NUMBER}" == "x" ] ; then echo "" ;else echo ">= %{NSSSOFTOKN_BUILDTIME_NUMBER}" ;fi)
+%global NSS_BUILDTIME_VERSION %(if [ "x%{NSS_BUILDTIME_NUMBER}" == "x" ] ; then echo "" ;else echo ">= %{NSS_BUILDTIME_NUMBER}" ;fi)
 
 # fix for https://bugzilla.redhat.com/show_bug.cgi?id=1111349
 %global _privatelibs libmawt[.]so.*
@@ -152,7 +158,7 @@
 # note, following three variables are sedded from update_sources if used correctly. Hardcode them rather there.
 %global project         aarch32-port
 %global repo            jdk8u
-%global revision        jdk8u91-b14-aarch32-160510
+%global revision        jdk8u102-b14-aarch32-160812
 # eg # jdk8u60-b27 -> jdk8u60 or # aarch64-jdk8u60-b27 -> aarch64-jdk8u60  (dont forget spec escape % by %%)
 %global whole_update    %(VERSION=%{revision}; echo ${VERSION%%-*})
 # eg  jdk8u60 -> 60 or aarch64-jdk8u60 -> 60
@@ -160,7 +166,7 @@
 # eg jdk8u60-b27 -> b27
 %global buildver        %(VERSION=%{revision}; echo ${VERSION##*-})
 # priority must be 7 digits in total. The expression is workarounding tip
-%global priority        %(TIP=18000%{updatever};  echo ${TIP/tip/99})
+%global priority        %(TIP=1800%{updatever};  echo ${TIP/tip/999})
 
 %global javaver         1.8.0
 
@@ -630,6 +636,9 @@ Requires: javapackages-tools
 Requires: tzdata-java >= 2015d
 # libsctp.so.1 is being `dlopen`ed on demand
 Requires: lksctp-tools
+# there is need to depnd on exact version of nss
+Requires: nss %{NSS_BUILDTIME_VERSION}
+Requires: nss-softokn %{NSSSOFTOKN_BUILDTIME_VERSION}
 # tool to copy jdk's configs - should be Recommends only, but then only dnf/yum eforce it, not rpm transaction and so no configs are persisted when pure rpm -u is run. I t may be consiedered as regression
 Requires: copy-jdk-configs >= 1.1-3
 OrderWithRequires: copy-jdk-configs
@@ -808,10 +817,22 @@ Patch512: no_strict_overflow.patch
 # PR1983: Support using the system installation of NSS with the SunEC provider
 # PR2127: SunEC provider crashes when built using system NSS
 # PR2815: Race condition in SunEC provider with system NSS
+# PR2899: Don't use WithSeed versions of NSS functions as they don't fully process the seed
+# PR2934: SunEC provider throwing KeyException with current NSS
 Patch513: pr1983-jdk.patch
 Patch514: pr1983-root.patch
 Patch515: pr2127.patch
 Patch516: pr2815.patch
+Patch517: pr2899.patch
+Patch518: pr2934.patch
+# S8150954, RH1176206, PR2866: Taking screenshots on x11 composite desktop produces wrong result
+# In progress: http://mail.openjdk.java.net/pipermail/awt-dev/2016-March/010742.html
+Patch508: rh1176206-jdk.patch
+Patch509: rh1176206-root.patch
+# RH1337583, PR2974: PKCS#10 certificate requests now use CRLF line endings rather than system line endings
+Patch523: pr2974-rh1337583.patch
+# PR3083, RH1346460: Regression in SSL debug output without an ECC provider
+Patch528: pr3083-rh1346460.patch
 
 # Arch-specific upstreamable patches
 # PR2415: JVM -Xmx requirement is too high on s390
@@ -821,19 +842,6 @@ Patch102: java-1.8.0-openjdk-size_t.patch
 # Use "%z" for size_t on s390 as size_t != intptr_t
 Patch103: s390-size_t_format_flags.patch
 
-# AArch64-specific upstreamable patches
-# Remove template in AArch64 port which causes issues with GCC 6
-Patch106: remove_aarch64_template_for_gcc6.patch
-
-# AArch64-specific upstreamed patches
-# Remove accidentally included global large code cache changes which break S390
-Patch107: make_reservedcodecachesize_changes_aarch64_only.patch
-
-# Patches which need backporting to 8u
-# S8073139, RH1191652; fix name of ppc64le architecture
-Patch601: java-1.8.0-openjdk-rh1191652-root.patch
-Patch602: java-1.8.0-openjdk-rh1191652-jdk.patch
-Patch603: java-1.8.0-openjdk-rh1191652-hotspot-aarch64.patch
 # Include all sources in src.zip
 Patch7: include-all-srcs.patch
 # 8035341: Allow using a system installed libpng
@@ -843,29 +851,29 @@ Patch203: system-lcms.patch
 # PR2462: Backport "8074839: Resolve disabled warnings for libunpack and the unpack200 binary"
 # This fixes printf warnings that lead to build failure with -Werror=format-security from optflags
 Patch502: pr2462.patch
-# S8140620, PR2769: Find and load default.sf2 as the default soundbank on Linux
-# waiting on upstream: http://mail.openjdk.java.net/pipermail/jdk8u-dev/2016-January/004916.html
-Patch605: soundFontPatch.patch
 # S8148351, PR2842: Only display resolved symlink for compiler, do not change path
 Patch506: pr2842-01.patch
 Patch507: pr2842-02.patch
-# S8150954, RH1176206, PR2866: Taking screenshots on x11 composite desktop produces wrong result
-# In progress: http://mail.openjdk.java.net/pipermail/awt-dev/2016-March/010742.html
-Patch508: rh1176206-jdk.patch
-Patch509: rh1176206-root.patch
+# S8154313: Generated javadoc scattered all over the place
+Patch400: 8154313.patch
+# S6260348, PR3066: GTK+ L&F JTextComponent not respecting desktop caret blink rate
+Patch526: 6260348-pr3066.patch
 
-# Patches upstream and appearing in 8u76
-# Fixes StackOverflowError on ARM32 bit Zero. See RHBZ#1206656
-# 8087120: [GCC5] java.lang.StackOverflowError on Zero JVM initialization on non x86 platforms
-Patch403: rhbz1206656_fix_current_stack_pointer.patch
-# S8143855: Bad printf formatting in frame_zero.cpp 
-Patch505: 8143855.patch
+# Patches upstream and appearing in 8u112
+# S8044762, PR2960: com/sun/jdi/OptionTest.java test time out
+Patch521: 8044762-pr2960.patch
+# S8049226, PR2960: com/sun/jdi/OptionTest.java test times out again
+Patch522: 8049226-pr2960.patch
 
 # Patches ineligible for 8u
 # 8043805: Allow using a system-installed libjpeg
 Patch201: system-libjpeg.patch
 
 # Local fixes
+# PR1834, RH1022017: Reduce curves reported by SSL to those in NSS
+Patch525: pr1834-rh1022017.patch
+# Temporary fix for typo in CORBA security patch
+Patch529: corba_typo_fix.patch
 
 # Non-OpenJDK fixes
 Patch300: jstack-pr1845.patch
@@ -1135,21 +1143,8 @@ sh %{SOURCE12}
 %patch102
 %patch103
 
-# aarch64 build fixes
-#%patch106
-#%patch107
-
-# Zero PPC fixes.
-#%patch403
-
-#%patch603
-#%patch601
-#%patch602
-%patch605
-
 %patch502
 %patch504
-#%patch505
 %patch506
 %patch507
 %patch508
@@ -1160,6 +1155,15 @@ sh %{SOURCE12}
 %patch514
 %patch515
 %patch516
+%patch517
+%patch518
+%patch400
+%patch521
+%patch522
+%patch523
+%patch525
+%patch528
+%patch529
 
 # Extract systemtap tapsets
 %if %{with_systemtap}
@@ -1723,11 +1727,21 @@ require "copy_jdk_configs.lua"
 %endif
 
 %changelog
+* Sun Aug 14 2016 Alex Kashchenko <akashche@redhat.com> - 1:1.8.0.102-1.160812
+- remove upstreamed soundFontPatch.patch
+- added patches 6260348-pr3066.patch, pr2974-rh1337583.patch, pr3083-rh1346460.patch, pr2899.patch, pr2934.patch, pr1834-rh1022017.patch, corba_typo_fix.patch, 8154313.patch
+- removed unused patches java-1.8.0-openjdk-rh1191652-root.patch, java-1.8.0-openjdk-rh1191652-jdk.patch, java-1.8.0-openjdk-rh1191652-hotspot-aarch64.patch
+- removed upstreamed (and previously unused) patches 8143855.patch, rhbz1206656_fix_current_stack_pointer.patch, remove_aarch64_template_for_gcc6.patch, make_reservedcodecachesize_changes_aarch64_only.patch
+- added JDWP patches 8044762-pr2960.patch and 8049226-pr2960.patch
+- priority lowered for ine zero digit, tip moved to 999
+- Restricted to depend on exactly same version of nss as used for build,
+- Resolves: rhbz#1332456
+- used aarch32-port-jdk8u-jdk8u102-b14-aarch32-160812.tar.xz as new sources
 * Wed Jun 29 2016 Jiri Vanek <jvanek@redhat.com> - 1:1.8.0.91-1.160510
 - initial clone form java-1.8.0-openjdk
 - using aarch32 sources
 - restricted to {arm}  arch only
 - adapted description and summary
 - all {name} in pathches replaced by java-1.8.0-openjdk. Same for source12
-- blindly commented out not applicable patches
+- blinjava-1.8.0-openjdk-rh1191652-jdk.patchdly commented out not applicable patches
 - removed all java provides
