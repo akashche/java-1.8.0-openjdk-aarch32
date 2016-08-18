@@ -7,8 +7,8 @@
 8164041: aarch32: support old pre-c++11 toolchains and ucLibc
 
 diff --git a/make/linux/platform_aarch32 b/make/linux/platform_aarch32
---- a/make/linux/platform_aarch32
-+++ b/make/linux/platform_aarch32
+--- openjdk/hotspot/make/linux/platform_aarch32
++++ openjdk/hotspot/make/linux/platform_aarch32
 @@ -12,7 +12,10 @@
  
  compiler = gcc
@@ -22,8 +22,8 @@ diff --git a/make/linux/platform_aarch32 b/make/linux/platform_aarch32
  # NOTE!! The existing codebase contians some code which uses ARM32, I'm not sure about this and have left this off
  # ARM has been defined as this is also used in the shared code (but much more widely).
 diff --git a/src/os/linux/vm/os_linux.cpp b/src/os/linux/vm/os_linux.cpp
---- a/src/os/linux/vm/os_linux.cpp
-+++ b/src/os/linux/vm/os_linux.cpp
+--- openjdk/hotspot/src/os/linux/vm/os_linux.cpp
++++ openjdk/hotspot/src/os/linux/vm/os_linux.cpp
 @@ -94,7 +94,9 @@
  # include <string.h>
  # include <syscall.h>
@@ -81,8 +81,8 @@ diff --git a/src/os/linux/vm/os_linux.cpp b/src/os/linux/vm/os_linux.cpp
  
  void os::pause() {
 diff --git a/src/os_cpu/linux_aarch32/vm/atomic_linux_aarch32.inline.hpp b/src/os_cpu/linux_aarch32/vm/atomic_linux_aarch32.inline.hpp
---- a/src/os_cpu/linux_aarch32/vm/atomic_linux_aarch32.inline.hpp
-+++ b/src/os_cpu/linux_aarch32/vm/atomic_linux_aarch32.inline.hpp
+--- openjdk/hotspot/src/os_cpu/linux_aarch32/vm/atomic_linux_aarch32.inline.hpp
++++ openjdk/hotspot/src/os_cpu/linux_aarch32/vm/atomic_linux_aarch32.inline.hpp
 @@ -33,14 +33,16 @@
  
  // Implementation of class atomic
@@ -173,8 +173,8 @@ diff --git a/src/os_cpu/linux_aarch32/vm/atomic_linux_aarch32.inline.hpp b/src/o
  
  #endif // OS_CPU_LINUX_AARCH32_VM_ATOMIC_LINUX_AARCH32_INLINE_HPP
 diff --git a/src/os_cpu/linux_aarch32/vm/orderAccess_linux_aarch32.inline.hpp b/src/os_cpu/linux_aarch32/vm/orderAccess_linux_aarch32.inline.hpp
---- a/src/os_cpu/linux_aarch32/vm/orderAccess_linux_aarch32.inline.hpp
-+++ b/src/os_cpu/linux_aarch32/vm/orderAccess_linux_aarch32.inline.hpp
+--- openjdk/hotspot/src/os_cpu/linux_aarch32/vm/orderAccess_linux_aarch32.inline.hpp
++++ openjdk/hotspot/src/os_cpu/linux_aarch32/vm/orderAccess_linux_aarch32.inline.hpp
 @@ -51,82 +51,126 @@
    FULL_MEM_BARRIER;
  }
@@ -351,8 +351,8 @@ diff --git a/src/os_cpu/linux_aarch32/vm/orderAccess_linux_aarch32.inline.hpp b/
 +
  #endif // OS_CPU_LINUX_AARCH32_VM_ORDERACCESS_LINUX_AARCH32_INLINE_HPP
 diff --git a/src/share/vm/utilities/globalDefinitions_gcc.hpp b/src/share/vm/utilities/globalDefinitions_gcc.hpp
---- a/src/share/vm/utilities/globalDefinitions_gcc.hpp
-+++ b/src/share/vm/utilities/globalDefinitions_gcc.hpp
+--- openjdk/hotspot/src/share/vm/utilities/globalDefinitions_gcc.hpp
++++ openjdk/hotspot/src/share/vm/utilities/globalDefinitions_gcc.hpp
 @@ -234,7 +234,12 @@
  inline int g_isnan(double f) { return isnand(f); }
  #elif defined(__APPLE__)
