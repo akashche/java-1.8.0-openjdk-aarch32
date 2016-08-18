@@ -746,7 +746,7 @@ Obsoletes: java-1.7.0-openjdk-accessibility%1
 
 Name:    java-%{javaver}-%{origin}-aarch32
 Version: %{javaver}.%{updatever}
-%global aarch32_date_tag 201608091
+%global aarch32_date_tag 201608180
 Release: %{aarch32_date_tag}.%{buildver}%{?dist}
 # java-1.5.0-ibm from jpackage.org set Epoch to 1 for unknown reasons,
 # and this change was brought into RHEL-4.  java-1.5.0-ibm packages
@@ -880,7 +880,7 @@ Patch529: corba_typo_fix.patch
 Patch300: jstack-pr1845.patch
 
 # aarch32 patches
-Patch1001: aarch32-8163469.patch
+Patch1001: aarch32-8164041.patch
 # end aarch32 patches
 
 BuildRequires: autoconf
