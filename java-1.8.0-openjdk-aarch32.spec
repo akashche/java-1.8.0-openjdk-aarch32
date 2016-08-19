@@ -746,7 +746,7 @@ Obsoletes: java-1.7.0-openjdk-accessibility%1
 
 Name:    java-%{javaver}-%{origin}-aarch32
 Version: %{javaver}.%{updatever}
-%global aarch32_date_tag 201608180
+%global aarch32_date_tag 201608190
 Release: %{aarch32_date_tag}.%{buildver}%{?dist}
 # java-1.5.0-ibm from jpackage.org set Epoch to 1 for unknown reasons,
 # and this change was brought into RHEL-4.  java-1.5.0-ibm packages
@@ -909,7 +909,7 @@ BuildRequires: pkgconfig
 BuildRequires: xorg-x11-proto-devel
 #BuildRequires: redhat-lsb
 BuildRequires: zip
-BuildRequires: java-1.8.0-openjdk-devel
+BuildRequires: java-1.8.0-openjdk-aarch32-devel
 # Zero-assembler build requirement.
 %ifnarch %{jit_arches}
 BuildRequires: libffi-devel
@@ -1255,6 +1255,9 @@ fi
 mkdir -p %{buildoutputdir $suffix}
 pushd %{buildoutputdir $suffix}
 
+# use aarch32 as a boot jdk
+alternatives --set java_sdk_openjdk java-1.8.0-openjdk-aarch32
+/usr/lib/jvm/java-openjdk/bin/java -version
 
 NSS_LIBS="%{NSS_LIBS} -lfreebl" \
 NSS_CFLAGS="%{NSS_CFLAGS}" \
