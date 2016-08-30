@@ -746,7 +746,7 @@ Obsoletes: java-1.7.0-openjdk-accessibility%1
 
 Name:    java-%{javaver}-%{origin}-aarch32
 Version: %{javaver}.%{updatever}
-Release: 1.%{buildver}%{?dist}
+Release: 2.%{buildver}%{?dist}
 # java-1.5.0-ibm from jpackage.org set Epoch to 1 for unknown reasons,
 # and this change was brought into RHEL-4.  java-1.5.0-ibm packages
 # also included the epoch in their virtual provides.  This created a
@@ -878,6 +878,18 @@ Patch529: corba_typo_fix.patch
 # Non-OpenJDK fixes
 Patch300: jstack-pr1845.patch
 
+# AArch32 upstream changes
+# 8163469: aarch32: add support for ARMv6K CPU
+Patch1001: aarch32-8163469.patch
+# 8164042: aarch32: small update of nativeInstruction
+Patch1002: aarch32-8164042.patch
+# 8164041: support old pre-c++11 toolchains and ucLibc
+Patch1003: aarch32-8164041.patch
+# aarch32: C1 port
+Patch1004: aarch32-8164652.patch
+Patch1005: aarch32-8164652-jdk.patch
+
+
 BuildRequires: autoconf
 BuildRequires: automake
 BuildRequires: alsa-lib-devel
@@ -904,7 +916,7 @@ BuildRequires: pkgconfig
 BuildRequires: xorg-x11-proto-devel
 #BuildRequires: redhat-lsb
 BuildRequires: zip
-BuildRequires: java-1.8.0-openjdk-devel
+BuildRequires: java-1.8.0-openjdk-aarch32-devel
 # Zero-assembler build requirement.
 %ifnarch %{jit_arches}
 BuildRequires: libffi-devel
@@ -1165,6 +1177,13 @@ sh %{SOURCE12}
 %patch528
 %patch529
 
+# AArch32 upstream patches
+%patch1001
+%patch1002
+%patch1003
+%patch1004
+%patch1005
+
 # Extract systemtap tapsets
 %if %{with_systemtap}
 tar xzf %{SOURCE8}
@@ -1250,14 +1269,12 @@ pushd %{buildoutputdir $suffix}
 NSS_LIBS="%{NSS_LIBS} -lfreebl" \
 NSS_CFLAGS="%{NSS_CFLAGS}" \
 bash ../../configure \
-%ifnarch %{jit_arches}
-    --with-jvm-variants=core \
-%endif
+    --with-jvm-variants=client \
     --disable-zip-debug-info \
     --with-milestone="fcs" \
     --with-update-version=%{updatever} \
     --with-build-number=%{buildver} \
-    --with-boot-jdk=/usr/lib/jvm/java-openjdk \
+    --with-boot-jdk=$(echo /usr/lib/jvm/java-1.8.0-openjdk-aarch32-*) \
     --with-debug-level=$debugbuild \
     --enable-unlimited-crypto \
     --enable-system-nss \
@@ -1727,6 +1744,9 @@ require "copy_jdk_configs.lua"
 %endif
 
 %changelog
+* Mon Aug 29 2016 Alex Kashchenko <akashche@redhat.com> - 1:1.8.0.102-2.160812
+- added C1 JIT patches
+- use java-1.8.0-openjdk-aarch32 as a boot jdk
 * Sun Aug 14 2016 Alex Kashchenko <akashche@redhat.com> - 1:1.8.0.102-1.160812
 - remove upstreamed soundFontPatch.patch
 - added patches 6260348-pr3066.patch, pr2974-rh1337583.patch, pr3083-rh1346460.patch, pr2899.patch, pr2934.patch, pr1834-rh1022017.patch, corba_typo_fix.patch, 8154313.patch
