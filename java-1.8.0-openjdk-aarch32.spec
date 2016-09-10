@@ -208,6 +208,13 @@
 # not-duplicated scriplets for normal/debug packages
 %global update_desktop_icons /usr/bin/gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
 
+%global check_sum_presented_in_spec() %{expand:
+md5sum %1
+currentMd5sum=`md5sum %1 | sed "s;\\s.*;;"`
+specfile=%{_specdir}/%{name}.spec
+grep -e md5sum -A 20 $specfile  | grep $currentMd5sum
+}
+
 %global post_script() %{expand:
 update-desktop-database %{_datadir}/applications &> /dev/null || :
 /bin/touch --no-create %{_datadir}/icons/hicolor &>/dev/null || :
@@ -233,7 +240,9 @@ if [ "$1" -gt 1 ]; then
        "${sum}" = 'd17958676bdb9f9d941c8a59655311fb' -o \\
        "${sum}" = '5463aef7dbf0bbcfe79e0336a7f92701' -o \\
        "${sum}" = '400cc64d4dd31f36dc0cc2c701d603db' -o \\
-       "${sum}" = '321342219bb130d238ff144b9e5dbfc1' ]; then
+       "${sum}" = '321342219bb130d238ff144b9e5dbfc1' -o \\
+       "${sum}" = '134a37a84983b620f4d8d51a550c0c38' -o \\
+       "${sum}" = '5ea976e209d0d0b5b6ab148416123e02' ]; then
     if [ -f "${javasecurity}.rpmnew" ]; then
       mv -f "${javasecurity}.rpmnew" "${javasecurity}"
     fi
@@ -255,7 +264,7 @@ fi
 
 ext=.gz
 alternatives \\
-  --install %{_bindir}/java java %{jrebindir %%1}/java $PRIORITY  --family %{name} \\
+  --install %{_bindir}/java java %{jrebindir %%1}/java $PRIORITY  --family %{name}.%{_arch} \\
   --slave %{_jvmdir}/jre jre %{_jvmdir}/%{jredir %%1} \\
   --slave %{_jvmjardir}/jre jre_exports %{_jvmjardir}/%{jrelnk %%1} \\
   --slave %{_bindir}/jjs jjs %{jrebindir %%1}/jjs \\
@@ -294,12 +303,12 @@ alternatives \\
 for X in %{origin} %{javaver} ; do
   alternatives \\
     --install %{_jvmdir}/jre-"$X" \\
-    jre_"$X" %{_jvmdir}/%{jredir %%1} $PRIORITY  --family %{name} \\
+    jre_"$X" %{_jvmdir}/%{jredir %%1} $PRIORITY  --family %{name}.%{_arch} \\
     --slave %{_jvmjardir}/jre-"$X" \\
     jre_"$X"_exports %{_jvmdir}/%{jredir %%1}
 done
 
-update-alternatives --install %{_jvmdir}/jre-%{javaver}-%{origin} jre_%{javaver}_%{origin} %{_jvmdir}/%{jrelnk %%1} $PRIORITY  --family %{name} \\
+update-alternatives --install %{_jvmdir}/jre-%{javaver}-%{origin} jre_%{javaver}_%{origin} %{_jvmdir}/%{jrelnk %%1} $PRIORITY  --family %{name}.%{_arch} \\
 --slave %{_jvmjardir}/jre-%{javaver}       jre_%{javaver}_%{origin}_exports      %{jvmjardir %%1}
 
 update-desktop-database %{_datadir}/applications &> /dev/null || :
@@ -337,7 +346,7 @@ fi
 
 ext=.gz
 alternatives \\
-  --install %{_bindir}/javac javac %{sdkbindir %%1}/javac $PRIORITY  --family %{name} \\
+  --install %{_bindir}/javac javac %{sdkbindir %%1}/javac $PRIORITY  --family %{name}.%{_arch} \\
   --slave %{_jvmdir}/java java_sdk %{_jvmdir}/%{sdkdir %%1} \\
   --slave %{_jvmjardir}/java java_sdk_exports %{_jvmjardir}/%{sdkdir %%1} \\
   --slave %{_bindir}/appletviewer appletviewer %{sdkbindir %%1}/appletviewer \\
@@ -430,12 +439,12 @@ alternatives \\
 for X in %{origin} %{javaver} ; do
   alternatives \\
     --install %{_jvmdir}/java-"$X" \\
-    java_sdk_"$X" %{_jvmdir}/%{sdkdir %%1} $PRIORITY  --family %{name} \\
+    java_sdk_"$X" %{_jvmdir}/%{sdkdir %%1} $PRIORITY  --family %{name}.%{_arch} \\
     --slave %{_jvmjardir}/java-"$X" \\
     java_sdk_"$X"_exports %{_jvmjardir}/%{sdkdir %%1}
 done
 
-update-alternatives --install %{_jvmdir}/java-%{javaver}-%{origin} java_sdk_%{javaver}_%{origin} %{_jvmdir}/%{sdkdir %%1} $PRIORITY  --family %{name} \\
+update-alternatives --install %{_jvmdir}/java-%{javaver}-%{origin} java_sdk_%{javaver}_%{origin} %{_jvmdir}/%{sdkdir %%1} $PRIORITY  --family %{name}.%{_arch} \\
 --slave %{_jvmjardir}/java-%{javaver}-%{origin}       java_sdk_%{javaver}_%{origin}_exports      %{_jvmjardir}/%{sdkdir %%1}
 
 update-desktop-database %{_datadir}/applications &> /dev/null || :
@@ -472,7 +481,7 @@ fi
 
 alternatives \\
   --install %{_javadocdir}/java javadocdir %{_javadocdir}/%{uniquejavadocdir %%1}/api \\
-  $PRIORITY  --family %{name} 
+  $PRIORITY  --family %{name}
 exit 0
 }
 
@@ -746,7 +755,7 @@ Obsoletes: java-1.7.0-openjdk-accessibility%1
 
 Name:    java-%{javaver}-%{origin}-aarch32
 Version: %{javaver}.%{updatever}
-Release: 2.%{buildver}%{?dist}
+Release: 3.%{buildver}%{?dist}
 # java-1.5.0-ibm from jpackage.org set Epoch to 1 for unknown reasons,
 # and this change was brought into RHEL-4.  java-1.5.0-ibm packages
 # also included the epoch in their virtual provides.  This created a
@@ -789,6 +798,9 @@ Source12: java-1.8.0-openjdk-remove-intree-libraries.sh
 
 # Ensure we aren't using the limited crypto policy
 Source13: TestCryptoLevel.java
+
+# Ensure ECDSA is working
+Source14: TestECDSA.java
 
 Source20: repackReproduciblePolycies.sh
 
@@ -914,7 +926,6 @@ BuildRequires: libXtst-devel
 BuildRequires: nss-devel
 BuildRequires: pkgconfig
 BuildRequires: xorg-x11-proto-devel
-#BuildRequires: redhat-lsb
 BuildRequires: zip
 BuildRequires: java-1.8.0-openjdk-aarch32-devel
 # Zero-assembler build requirement.
@@ -1223,6 +1234,9 @@ for file in %{SOURCE9} %{SOURCE10} ; do
 done
 done
 
+# this is check which controls, that latest java.security is included in post(_headless)
+%{check_sum_presented_in_spec openjdk/jdk/src/share/lib/security/java.security-linux}
+
 %build
 # How many cpu's do we have?
 export NUM_PROC=%(/usr/bin/getconf _NPROCESSORS_ONLN 2> /dev/null || :)
@@ -1338,9 +1352,16 @@ for suffix in %{rev_build_loop} ; do
 
 export JAVA_HOME=$(pwd)/%{buildoutputdir $suffix}/images/%{j2sdkimage}
 
+# check java.security in this build is also in this specfile
+%{check_sum_presented_in_spec $JAVA_HOME/jre/lib/security/java.security}
+
 # Check unlimited policy has been used
 $JAVA_HOME/bin/javac -d . %{SOURCE13}
 $JAVA_HOME/bin/java TestCryptoLevel
+
+# Check ECC is working
+$JAVA_HOME/bin/javac -d . %{SOURCE14}
+$JAVA_HOME/bin/java $(echo $(basename %{SOURCE14})|sed "s|\.java||")
 
 # Check debug symbols are present and can identify code
 SERVER_JVM="$JAVA_HOME/jre/lib/%{archinstall}/server/libjvm.so"
@@ -1371,6 +1392,7 @@ $JAVA_HOME/bin/javap -l java.nio.ByteBuffer | grep LocalVariableTable
 done
 
 %install
+rm -rf $RPM_BUILD_ROOT
 STRIP_KEEP_SYMTAB=libjvm*
 
 for suffix in %{build_loop} ; do
@@ -1744,6 +1766,11 @@ require "copy_jdk_configs.lua"
 %endif
 
 %changelog
+* Sat Sep 10 2016 Alex Kashchenko <akashche@redhat.com> - 1:1.8.0.102-3.160812
+- declared check_sum_presented_in_spec and used in prep and check
+- it is checking that latest packed java.security is mentioned in listing
+- added ECDSA check
+- added %{_arch} postfix to alternatives
 * Mon Aug 29 2016 Alex Kashchenko <akashche@redhat.com> - 1:1.8.0.102-2.160812
 - added C1 JIT patches
 - use java-1.8.0-openjdk-aarch32 as a boot jdk
