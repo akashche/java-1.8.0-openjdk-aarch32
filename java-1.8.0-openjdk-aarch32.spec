@@ -91,6 +91,7 @@
 %global NSSSOFTOKN_BUILDTIME_VERSION %(if [ "x%{NSSSOFTOKN_BUILDTIME_NUMBER}" == "x" ] ; then echo "" ;else echo ">= %{NSSSOFTOKN_BUILDTIME_NUMBER}" ;fi)
 %global NSS_BUILDTIME_VERSION %(if [ "x%{NSS_BUILDTIME_NUMBER}" == "x" ] ; then echo "" ;else echo ">= %{NSS_BUILDTIME_NUMBER}" ;fi)
 
+
 # fix for https://bugzilla.redhat.com/show_bug.cgi?id=1111349
 %global _privatelibs libmawt[.]so.*
 %global __provides_exclude ^(%{_privatelibs})$
@@ -490,6 +491,24 @@ exit 0
 exit 0
 }
 
+%global post_javadoc_zip() %{expand:
+
+PRIORITY=%{priority}
+if [ "%1" == %{debug_suffix} ]; then
+  let PRIORITY=PRIORITY-1
+fi
+
+alternatives \\
+  --install %{_javadocdir}/java-zip javadoczip %{_javadocdir}/%{uniquejavadocdir %%1}.zip \\
+  $PRIORITY  --family %{name}
+exit 0
+}
+
+%global postun_javadoc_zip() %{expand:
+  alternatives --remove javadoczip %{_javadocdir}/%{uniquejavadocdir %%1}.zip
+exit 0
+}
+
 %global files_jre() %{expand:
 %{_datadir}/icons/hicolor/*x*/apps/java-%{javaver}.png
 %{_datadir}/applications/*policytool%1.desktop
@@ -604,6 +623,12 @@ exit 0
 %license %{buildoutputdir %%1}/images/%{j2sdkimage}/jre/LICENSE
 }
 
+%global files_javadoc_zip() %{expand:
+%defattr(-,root,root,-)
+%doc %{_javadocdir}/%{uniquejavadocdir %%1}.zip
+%license %{buildoutputdir %%1}/images/%{j2sdkimage}/jre/LICENSE
+}
+
 %global files_accessibility() %{expand:
 %{_jvmdir}/%{jredir %%1}/lib/%{archinstall}/libatk-wrapper.so
 %{_jvmdir}/%{jredir %%1}/lib/ext/java-atk-wrapper.jar
@@ -649,7 +674,7 @@ Requires: lksctp-tools
 Requires: nss %{NSS_BUILDTIME_VERSION}
 Requires: nss-softokn %{NSSSOFTOKN_BUILDTIME_VERSION}
 # tool to copy jdk's configs - should be Recommends only, but then only dnf/yum eforce it, not rpm transaction and so no configs are persisted when pure rpm -u is run. I t may be consiedered as regression
-Requires: copy-jdk-configs >= 1.1-3
+Requires:	copy-jdk-configs >= 1.1-3
 OrderWithRequires: copy-jdk-configs
 # Post requires alternatives to install tool alternatives.
 Requires(post):   %{_sbindir}/alternatives
@@ -679,6 +704,9 @@ Requires(postun):   chkconfig >= 1.7
 #Provides: jce%1 = %{epoch}:%{version}
 #Provides: jdbc-stdext%1 = 4.1
 #Provides: java-sasl%1 = %{epoch}:%{version}
+
+#https://bugzilla.redhat.com/show_bug.cgi?id=1312019
+#Provides: /usr/bin/jjs
 
 Obsoletes: java-1.7.0-openjdk-headless%1
 }
@@ -755,7 +783,7 @@ Obsoletes: java-1.7.0-openjdk-accessibility%1
 
 Name:    java-%{javaver}-%{origin}-aarch32
 Version: %{javaver}.%{updatever}
-Release: 4.%{buildver}%{?dist}
+Release: 5.%{buildver}%{?dist}
 # java-1.5.0-ibm from jpackage.org set Epoch to 1 for unknown reasons,
 # and this change was brought into RHEL-4.  java-1.5.0-ibm packages
 # also included the epoch in their virtual provides.  This created a
@@ -784,7 +812,7 @@ Source2:  README.src
 # They are based on code contained in the IcedTea7 project.
 
 # Systemtap tapsets. Zipped up to keep it small.
-Source8: systemtap-tapset.tar.gz
+Source8: systemtap-tapset-3.1.0.tar.xz
 
 # Desktop files. Adapated from IcedTea.
 Source9: jconsole.desktop.in
@@ -888,7 +916,6 @@ Patch525: pr1834-rh1022017.patch
 Patch529: corba_typo_fix.patch
 
 # Non-OpenJDK fixes
-Patch300: jstack-pr1845.patch
 
 # AArch32 upstream changes
 # 8163469: aarch32: add support for ARMv6K CPU
@@ -1071,6 +1098,19 @@ BuildArch: noarch
 The OpenJDK API documentation.
 %endif
 
+%if %{include_normal_build}
+%package javadoc-zip
+Summary: OpenJDK API Documentation compressed in single archive
+Group:   Documentation
+Requires: javapackages-tools
+BuildArch: noarch
+
+%{java_javadoc_rpo %{nil}}
+
+%description javadoc-zip
+The OpenJDK API documentation compressed in single archive.
+%endif
+
 %if %{include_debug_build}
 %package javadoc-debug
 Summary: OpenJDK API Documentation %{for_debug}
@@ -1083,6 +1123,20 @@ BuildArch: noarch
 %description javadoc-debug
 The OpenJDK API documentation %{for_debug}.
 %endif
+
+%if %{include_debug_build}
+%package javadoc-zip-debug
+Summary: OpenJDK API Documentation compressed in single archive %{for_debug}
+Group:   Documentation
+Requires: javapackages-tools
+BuildArch: noarch
+
+%{java_javadoc_rpo %{debug_suffix_unquoted}}
+
+%description javadoc-zip-debug
+The OpenJDK API documentation compressed in single archive %{for_debug}.
+%endif
+
 
 %if %{include_normal_build}
 %package accessibility
@@ -1197,8 +1251,7 @@ sh %{SOURCE12}
 
 # Extract systemtap tapsets
 %if %{with_systemtap}
-tar xzf %{SOURCE8}
-%patch300
+tar -x -I xz -f %{SOURCE8}
 %if %{include_debug_build}
 cp -r tapset tapset%{debug_suffix}
 %endif
@@ -1216,6 +1269,7 @@ for suffix in %{build_loop} ; do
 %endif
     sed -i -e s:@ABS_JAVA_HOME_DIR@:%{_jvmdir}/%{sdkdir $suffix}:g $OUTPUT_FILE
     sed -i -e s:@INSTALL_ARCH_DIR@:%{archinstall}:g $OUTPUT_FILE
+    sed -i -e s:@prefix@:%{_jvmdir}/%{sdkdir $suffix}/:g $OUTPUT_FILE
   done
 done
 # systemtap tapsets ends
@@ -1236,6 +1290,7 @@ done
 
 # this is check which controls, that latest java.security is included in post(_headless)
 %{check_sum_presented_in_spec openjdk/jdk/src/share/lib/security/java.security-linux}
+
 
 %build
 # How many cpu's do we have?
@@ -1279,7 +1334,6 @@ fi
 mkdir -p %{buildoutputdir $suffix}
 pushd %{buildoutputdir $suffix}
 
-
 NSS_LIBS="%{NSS_LIBS} -lfreebl" \
 NSS_CFLAGS="%{NSS_CFLAGS}" \
 bash ../../configure \
@@ -1319,6 +1373,8 @@ make \
     LOG=trace \
     SCTP_WERROR= \
     %{targets}
+
+make zip-docs
 
 # the build (erroneously) removes read permissions from some jars
 # this is a regression in OpenJDK 7 (our compiler):
@@ -1500,6 +1556,7 @@ popd
 # Install Javadoc documentation.
 install -d -m 755 $RPM_BUILD_ROOT%{_javadocdir}
 cp -a %{buildoutputdir $suffix}/docs $RPM_BUILD_ROOT%{_javadocdir}/%{uniquejavadocdir $suffix}
+cp -a %{buildoutputdir $suffix}/bundles/jdk-%{javaver}_%{updatever}$suffix-%{buildver}-docs.zip  $RPM_BUILD_ROOT%{_javadocdir}/%{uniquejavadocdir $suffix}.zip
 
 # Install icons and menu entries.
 for s in 16 24 32 48 ; do
@@ -1676,6 +1733,12 @@ require "copy_jdk_configs.lua"
 
 %postun javadoc
 %{postun_javadoc %{nil}}
+
+%post javadoc-zip
+%{post_javadoc_zip %{nil}}
+
+%postun javadoc-zip
+%{postun_javadoc_zip %{nil}}
 %endif
 
 %if %{include_debug_build} 
@@ -1708,6 +1771,12 @@ require "copy_jdk_configs.lua"
 
 %postun javadoc-debug
 %{postun_javadoc %{debug_suffix_unquoted}}
+
+%post javadoc-zip-debug
+%{post_javadoc_zip %{debug_suffix_unquoted}}
+
+%postun javadoc-zip-debug
+%{postun_javadoc_zip %{debug_suffix_unquoted}}
 %endif
 
 %if %{include_normal_build} 
@@ -1738,6 +1807,9 @@ require "copy_jdk_configs.lua"
 %files javadoc
 %{files_javadoc %{nil}}
 
+%files javadoc-zip
+%{files_javadoc_zip %{nil}}
+
 %files accessibility
 %{files_accessibility %{nil}}
 %endif
@@ -1761,21 +1833,33 @@ require "copy_jdk_configs.lua"
 %files javadoc-debug
 %{files_javadoc %{debug_suffix_unquoted}}
 
+%files javadoc-zip-debug
+%{files_javadoc_zip %{debug_suffix_unquoted}}
+
 %files accessibility-debug
 %{files_accessibility %{debug_suffix_unquoted}}
 %endif
 
 %changelog
+* Tue Sep 20 2016 Jiri Vanek <jvanek@redhat.com> - 1:1.8.0.102-5.160812
+- sync with normal java packages:
+-  added zipped javadocs
+-  updated systemtap
+-  added (commented out) provides on jjs
+
 * Sat Sep 10 2016 Alex Kashchenko <akashche@redhat.com> - 1:1.8.0.102-4.160812
 - declared check_sum_presented_in_spec and used in prep and check
 - it is checking that latest packed java.security is mentioned in listing
 - added ECDSA check
 - added %{_arch} postfix to alternatives
+
 * Wed Aug 31 2016 Alex Kashchenko <akashche@redhat.com> - 1:1.8.0.102-3.160812
 - revert boot jdk back to zero
+
 * Mon Aug 29 2016 Alex Kashchenko <akashche@redhat.com> - 1:1.8.0.102-2.160812
 - added C1 JIT patches
 - use java-1.8.0-openjdk-aarch32 as a boot jdk
+
 * Sun Aug 14 2016 Alex Kashchenko <akashche@redhat.com> - 1:1.8.0.102-1.160812
 - remove upstreamed soundFontPatch.patch
 - added patches 6260348-pr3066.patch, pr2974-rh1337583.patch, pr3083-rh1346460.patch, pr2899.patch, pr2934.patch, pr1834-rh1022017.patch, corba_typo_fix.patch, 8154313.patch
@@ -1786,6 +1870,7 @@ require "copy_jdk_configs.lua"
 - Restricted to depend on exactly same version of nss as used for build,
 - Resolves: rhbz#1332456
 - used aarch32-port-jdk8u-jdk8u102-b14-aarch32-160812.tar.xz as new sources
+
 * Wed Jun 29 2016 Jiri Vanek <jvanek@redhat.com> - 1:1.8.0.91-1.160510
 - initial clone form java-1.8.0-openjdk
 - using aarch32 sources
