@@ -783,7 +783,7 @@ Obsoletes: java-1.7.0-openjdk-accessibility%1
 
 Name:    java-%{javaver}-%{origin}-aarch32
 Version: %{javaver}.%{updatever}
-Release: 4.%{buildver}%{?dist}
+Release: 5.%{buildver}%{?dist}
 # java-1.5.0-ibm from jpackage.org set Epoch to 1 for unknown reasons,
 # and this change was brought into RHEL-4.  java-1.5.0-ibm packages
 # also included the epoch in their virtual provides.  This created a
@@ -927,6 +927,8 @@ Patch1003: aarch32-8164041.patch
 # aarch32: C1 port
 Patch1004: aarch32-8164652.patch
 Patch1005: aarch32-8164652-jdk.patch
+# report "arm" as os.arch
+Patch1006: aarch32-archname.patch
 
 
 BuildRequires: autoconf
@@ -1248,6 +1250,7 @@ sh %{SOURCE12}
 %patch1003
 %patch1004
 %patch1005
+%patch1006
 
 # Extract systemtap tapsets
 %if %{with_systemtap}
@@ -1841,6 +1844,9 @@ require "copy_jdk_configs.lua"
 %endif
 
 %changelog
+* Fri Sep 30 2016 Alex Kashchenko <akashche@redhat.com> - 1:1.8.0.102-5.160812
+- added aarch32-archname.patch
+
 * Wed Sep 21 2016 Alex Kashchenko <akashche@redhat.com> - 1:1.8.0.102-4.160812
 - fixed macro in comments
 - sync with normal java packages:
