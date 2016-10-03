@@ -1,0 +1,28 @@
+--- openjdk/hotspot/src/cpu/aarch32/vm/macroAssembler_aarch32.cpp	2016-10-03 17:06:18.000000000 +0300
++++ openjdk/hotspot/src/cpu/aarch32/vm/macroAssembler_aarch32.cpp	2016-10-03 17:06:18.000000000 +0300
+@@ -863,11 +863,7 @@
+                                            RegisterOrConstant vtable_index,
+                                            Register method_result) {
+   const int base = InstanceKlass::vtable_start_offset() * wordSize;
+-  //assert(vtableEntry::size() * wordSize == 8,
+-  //       "adjust the scaling in the code below");
+-  // FIXME What scaling needs changing as indexes address by one word
+   int vtable_offset_in_bytes = base + vtableEntry::method_offset_in_bytes();
+-
+   if (vtable_index.is_register()) {
+     lea(method_result, Address(recv_klass,
+                                vtable_index.as_register(),
+@@ -875,7 +871,12 @@
+     ldr(method_result, Address(method_result, vtable_offset_in_bytes));
+   } else {
+     vtable_offset_in_bytes += vtable_index.as_constant() * wordSize;
+-    ldr(method_result, Address(recv_klass, vtable_offset_in_bytes));
++    if(is_valid_for_offset_imm(vtable_offset_in_bytes, 12)) {
++      ldr(method_result, Address(recv_klass, vtable_offset_in_bytes));
++    } else {
++      mov(method_result, vtable_offset_in_bytes);
++      ldr(method_result, Address(recv_klass, method_result));
++    }
+   }
+ }
+ 
