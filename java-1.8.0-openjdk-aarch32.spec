@@ -21,7 +21,8 @@
 %endif
 
 # by default we build debug build during main build only on intel arches
-%ifarch %{ix86} x86_64
+# do not ever sync {arm}  to main packages, unles whole this package is merged.
+%ifarch %{ix86} x86_64 %{arm}
 %global include_debug_build 1
 %else
 %global include_debug_build 0
@@ -783,7 +784,7 @@ Obsoletes: java-1.7.0-openjdk-accessibility%1
 
 Name:    java-%{javaver}-%{origin}-aarch32
 Version: %{javaver}.%{updatever}
-Release: 9.%{buildver}%{?dist}
+Release: 10.%{buildver}%{?dist}
 # java-1.5.0-ibm from jpackage.org set Epoch to 1 for unknown reasons,
 # and this change was brought into RHEL-4.  java-1.5.0-ibm packages
 # also included the epoch in their virtual provides.  This created a
@@ -1847,6 +1848,9 @@ require "copy_jdk_configs.lua"
 %endif
 
 %changelog
+* Tue Oct 04 2016 Jiri Vanek <jvanek@redhat.com> - 1:1.8.0.102-10.160812
+- enabled debug build
+
 * Mon Oct 03 2016 Alex Kashchenko <akashche@redhat.com> - 1:1.8.0.102-9.160812
 - added aarch32-8167027.patch
 - fixes RHBZ#1379061
