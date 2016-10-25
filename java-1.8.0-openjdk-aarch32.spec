@@ -648,15 +648,15 @@ OrderWithRequires: %{name}-headless%1 = %{epoch}:%{version}-%{release}
 
 
 # Standard JPackage base provides.
-Provides: jre-%{javaver}-%{origin}%1 = %{epoch}:%{version}-%{release}
-Provides: jre-%{origin}%1 = %{epoch}:%{version}-%{release}
-Provides: jre-%{javaver}%1 = %{epoch}:%{version}-%{release}
-Provides: java-%{javaver}%1 = %{epoch}:%{version}-%{release}
-Provides: jre = %{javaver}%1
-Provides: java-%{origin}%1 = %{epoch}:%{version}-%{release}
-Provides: java%1 = %{epoch}:%{javaver}
+#Provides: jre-%{javaver}-%{origin}%1 = %{epoch}:%{version}-%{release}
+#Provides: jre-%{origin}%1 = %{epoch}:%{version}-%{release}
+#Provides: jre-%{javaver}%1 = %{epoch}:%{version}-%{release}
+#Provides: java-%{javaver}%1 = %{epoch}:%{version}-%{release}
+#Provides: jre = %{javaver}%1
+#Provides: java-%{origin}%1 = %{epoch}:%{version}-%{release}
+#Provides: java%1 = %{epoch}:%{javaver}
 # Standard JPackage extensions provides.
-Provides: java-fonts%1 = %{epoch}:%{version}
+#Provides: java-fonts%1 = %{epoch}:%{version}
 
 Obsoletes: java-1.7.0-openjdk%1
 Obsoletes: java-1.5.0-gcj%1
@@ -688,27 +688,27 @@ Requires(postun): %{_sbindir}/alternatives
 Requires(postun):   chkconfig >= 1.7
 
 # Standard JPackage base provides.
-Provides: jre-%{javaver}-%{origin}-headless%1 = %{epoch}:%{version}-%{release}
-Provides: jre-%{origin}-headless%1 = %{epoch}:%{version}-%{release}
-Provides: jre-%{javaver}-headless%1 = %{epoch}:%{version}-%{release}
-Provides: java-%{javaver}-headless%1 = %{epoch}:%{version}-%{release}
-Provides: jre-headless%1 = %{epoch}:%{javaver}
-Provides: java-%{origin}-headless%1 = %{epoch}:%{version}-%{release}
-Provides: java-headless%1 = %{epoch}:%{javaver}
+#Provides: jre-%{javaver}-%{origin}-headless%1 = %{epoch}:%{version}-%{release}
+#Provides: jre-%{origin}-headless%1 = %{epoch}:%{version}-%{release}
+#Provides: jre-%{javaver}-headless%1 = %{epoch}:%{version}-%{release}
+#Provides: java-%{javaver}-headless%1 = %{epoch}:%{version}-%{release}
+#Provides: jre-headless%1 = %{epoch}:%{javaver}
+#Provides: java-%{origin}-headless%1 = %{epoch}:%{version}-%{release}
+#Provides: java-headless%1 = %{epoch}:%{javaver}
 # Standard JPackage extensions provides.
-Provides: jndi%1 = %{epoch}:%{version}
-Provides: jndi-ldap%1 = %{epoch}:%{version}
-Provides: jndi-cos%1 = %{epoch}:%{version}
-Provides: jndi-rmi%1 = %{epoch}:%{version}
-Provides: jndi-dns%1 = %{epoch}:%{version}
-Provides: jaas%1 = %{epoch}:%{version}
-Provides: jsse%1 = %{epoch}:%{version}
-Provides: jce%1 = %{epoch}:%{version}
-Provides: jdbc-stdext%1 = 4.1
-Provides: java-sasl%1 = %{epoch}:%{version}
+#Provides: jndi%1 = %{epoch}:%{version}
+#Provides: jndi-ldap%1 = %{epoch}:%{version}
+#Provides: jndi-cos%1 = %{epoch}:%{version}
+#Provides: jndi-rmi%1 = %{epoch}:%{version}
+#Provides: jndi-dns%1 = %{epoch}:%{version}
+#Provides: jaas%1 = %{epoch}:%{version}
+#Provides: jsse%1 = %{epoch}:%{version}
+#Provides: jce%1 = %{epoch}:%{version}
+#Provides: jdbc-stdext%1 = 4.1
+#Provides: java-sasl%1 = %{epoch}:%{version}
 
 #https://bugzilla.redhat.com/show_bug.cgi?id=1312019
-Provides: /usr/bin/jjs
+#Provides: /usr/bin/jjs
 
 Obsoletes: java-1.7.0-openjdk-headless%1
 }
@@ -759,8 +759,8 @@ Requires(postun): %{_sbindir}/alternatives
 Requires(postun):   chkconfig >= 1.7
 
 # Standard JPackage javadoc provides.
-Provides: java-javadoc%1 = %{epoch}:%{version}-%{release}
-Provides: java-%{javaver}-javadoc%1 = %{epoch}:%{version}-%{release}
+#Provides: java-javadoc%1 = %{epoch}:%{version}-%{release}
+#Provides: java-%{javaver}-javadoc%1 = %{epoch}:%{version}-%{release}
 
 Obsoletes: java-1.7.0-openjdk-javadoc%1
 
@@ -1863,7 +1863,6 @@ require "copy_jdk_configs.lua"
 
 * Wed Sep 21 2016 Alex Kashchenko <akashche@redhat.com> - 1:1.8.0.102-4.160812
 - fixed macro in comments
-- enabled non-devel provides
 - sync with normal java packages:
 -  added zipped javadocs
 -  updated systemtap
