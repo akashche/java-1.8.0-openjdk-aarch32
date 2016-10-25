@@ -20,8 +20,16 @@
 %global build_loop1 %{nil}
 %endif
 
+%global aarch64         aarch64 arm64 armv8
+# sometimes we need to distinguish big and little endian PPC64
+%global ppc64le         ppc64le
+%global ppc64be         ppc64 ppc64p7
+%global multilib_arches %{power64} sparc64 x86_64
+%global jit_arches      %{ix86} x86_64 sparcv9 sparc64 %{aarch64} %{power64}
+
 # by default we build debug build during main build only on intel arches
-%ifarch %{ix86} x86_64
+# do not ever sync {arm}  to main packages, unles whole this package is merged.
+%ifarch %{ix86} x86_64 %{arm}
 %global include_debug_build 1
 %else
 %global include_debug_build 0
@@ -46,13 +54,6 @@
 %else
 %global targets all
 %endif
-
-%global aarch64         aarch64 arm64 armv8
-# sometimes we need to distinguish big and little endian PPC64
-%global ppc64le         ppc64le
-%global ppc64be         ppc64 ppc64p7
-%global multilib_arches %{power64} sparc64 x86_64
-%global jit_arches      %{ix86} x86_64 sparcv9 sparc64 %{aarch64} %{power64}
 
 %ifnarch %{jit_arches}
 # Disable hardened build on non-jit arches. Work-around for RHBZ#1290936.
@@ -243,7 +244,8 @@ if [ "$1" -gt 1 ]; then
        "${sum}" = '400cc64d4dd31f36dc0cc2c701d603db' -o \\
        "${sum}" = '321342219bb130d238ff144b9e5dbfc1' -o \\
        "${sum}" = '134a37a84983b620f4d8d51a550c0c38' -o \\
-       "${sum}" = '5ea976e209d0d0b5b6ab148416123e02' ]; then
+       "${sum}" = '5ea976e209d0d0b5b6ab148416123e02' -o \\
+       "${sum}" = '5ab4c77cf14fbd7f7ee6f51a7a73d88c' ]; then
     if [ -f "${javasecurity}.rpmnew" ]; then
       mv -f "${javasecurity}.rpmnew" "${javasecurity}"
     fi
@@ -783,7 +785,7 @@ Obsoletes: java-1.7.0-openjdk-accessibility%1
 
 Name:    java-%{javaver}-%{origin}-aarch32
 Version: %{javaver}.%{updatever}
-Release: 6.%{buildver}%{?dist}
+Release: 7.%{buildver}%{?dist}
 # java-1.5.0-ibm from jpackage.org set Epoch to 1 for unknown reasons,
 # and this change was brought into RHEL-4.  java-1.5.0-ibm packages
 # also included the epoch in their virtual provides.  This created a
@@ -912,8 +914,6 @@ Patch201: system-libjpeg.patch
 # Local fixes
 # PR1834, RH1022017: Reduce curves reported by SSL to those in NSS
 Patch525: pr1834-rh1022017.patch
-# Temporary fix for typo in CORBA security patch
-Patch529: corba_typo_fix.patch
 
 # Non-OpenJDK fixes
 
@@ -931,6 +931,8 @@ Patch1005: aarch32-8164652-jdk.patch
 Patch1006: aarch32-archname.patch
 # fix scala crash, RHBZ#1379061
 Patch1007: aarch32-8167027.patch
+# 8u111 security fixes
+Patch1008: aarch32-8u111.patch
 
 
 BuildRequires: autoconf
@@ -1244,7 +1246,6 @@ sh %{SOURCE12}
 %patch523
 %patch525
 %patch528
-%patch529
 
 # AArch32 upstream patches
 %patch1001
@@ -1254,6 +1255,7 @@ sh %{SOURCE12}
 %patch1005
 %patch1006
 %patch1007
+%patch1008
 
 # Extract systemtap tapsets
 %if %{with_systemtap}
@@ -1847,6 +1849,11 @@ require "copy_jdk_configs.lua"
 %endif
 
 %changelog
+* Tue Oct 25 2016 Alex Kashchenko <akashche@redhat.com> - 1:1.8.0.102-7.160812
+- added aarch32-8u111.patch
+- removed corba_typo_fix.patch
+- enabled debug build
+
 * Mon Oct 03 2016 Alex Kashchenko <akashche@redhat.com> - 1:1.8.0.102-6.160812
 - added aarch32-8167027.patch
 - fixes RHBZ#1379061
@@ -1867,9 +1874,6 @@ require "copy_jdk_configs.lua"
 - it is checking that latest packed java.security is mentioned in listing
 - added ECDSA check
 - added %%{_arch} postfix to alternatives
-
-* Wed Aug 31 2016 Alex Kashchenko <akashche@redhat.com> - 1:1.8.0.102-3.160812
-- revert boot jdk back to zero
 
 * Mon Aug 29 2016 Alex Kashchenko <akashche@redhat.com> - 1:1.8.0.102-2.160812
 - added C1 JIT patches
