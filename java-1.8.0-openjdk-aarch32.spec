@@ -244,7 +244,8 @@ if [ "$1" -gt 1 ]; then
        "${sum}" = '400cc64d4dd31f36dc0cc2c701d603db' -o \\
        "${sum}" = '321342219bb130d238ff144b9e5dbfc1' -o \\
        "${sum}" = '134a37a84983b620f4d8d51a550c0c38' -o \\
-       "${sum}" = '5ea976e209d0d0b5b6ab148416123e02' ]; then
+       "${sum}" = '5ea976e209d0d0b5b6ab148416123e02' -o \\
+       "${sum}" = '5ab4c77cf14fbd7f7ee6f51a7a73d88c' ]; then
     if [ -f "${javasecurity}.rpmnew" ]; then
       mv -f "${javasecurity}.rpmnew" "${javasecurity}"
     fi
@@ -784,7 +785,7 @@ Obsoletes: java-1.7.0-openjdk-accessibility%1
 
 Name:    java-%{javaver}-%{origin}-aarch32
 Version: %{javaver}.%{updatever}
-Release: 10.%{buildver}%{?dist}
+Release: 11.%{buildver}%{?dist}
 # java-1.5.0-ibm from jpackage.org set Epoch to 1 for unknown reasons,
 # and this change was brought into RHEL-4.  java-1.5.0-ibm packages
 # also included the epoch in their virtual provides.  This created a
@@ -913,8 +914,6 @@ Patch201: system-libjpeg.patch
 # Local fixes
 # PR1834, RH1022017: Reduce curves reported by SSL to those in NSS
 Patch525: pr1834-rh1022017.patch
-# Temporary fix for typo in CORBA security patch
-Patch529: corba_typo_fix.patch
 
 # Non-OpenJDK fixes
 
@@ -932,6 +931,8 @@ Patch1005: aarch32-8164652-jdk.patch
 Patch1006: aarch32-archname.patch
 # fix scala crash, RHBZ#1379061
 Patch1007: aarch32-8167027.patch
+# 8u111 security fixes
+Patch1008: aarch32-8u111.patch
 
 
 BuildRequires: autoconf
@@ -1245,7 +1246,6 @@ sh %{SOURCE12}
 %patch523
 %patch525
 %patch528
-%patch529
 
 # AArch32 upstream patches
 %patch1001
@@ -1255,6 +1255,7 @@ sh %{SOURCE12}
 %patch1005
 %patch1006
 %patch1007
+%patch1008
 
 # Extract systemtap tapsets
 %if %{with_systemtap}
@@ -1848,6 +1849,10 @@ require "copy_jdk_configs.lua"
 %endif
 
 %changelog
+* Tue Oct 25 2016 Alex Kashchenko <akashche@redhat.com> - 1:1.8.0.102-11.160812
+- added aarch32-8u111.patch
+- removed corba_typo_fix.patch
+
 * Tue Oct 04 2016 Jiri Vanek <jvanek@redhat.com> - 1:1.8.0.102-10.160812
 - enabled debug build
 
