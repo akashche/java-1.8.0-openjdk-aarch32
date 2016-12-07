@@ -160,7 +160,7 @@
 # note, following three variables are sedded from update_sources if used correctly. Hardcode them rather there.
 %global project         aarch32-port
 %global repo            jdk8u
-%global revision        jdk8u102-b14-aarch32-160812
+%global revision        jdk8u112-b16-aarch32-161109
 # eg # jdk8u60-b27 -> jdk8u60 or # aarch64-jdk8u60-b27 -> aarch64-jdk8u60  (dont forget spec escape % by %%)
 %global whole_update    %(VERSION=%{revision}; echo ${VERSION%%-*})
 # eg  jdk8u60 -> 60 or aarch64-jdk8u60 -> 60
@@ -245,6 +245,7 @@ if [ "$1" -gt 1 ]; then
        "${sum}" = '321342219bb130d238ff144b9e5dbfc1' -o \\
        "${sum}" = '134a37a84983b620f4d8d51a550c0c38' -o \\
        "${sum}" = '5ea976e209d0d0b5b6ab148416123e02' -o \\
+       "${sum}" = '059d61cfbb47e337b011ecda9350db9b' -o \\
        "${sum}" = '5ab4c77cf14fbd7f7ee6f51a7a73d88c' ]; then
     if [ -f "${javasecurity}.rpmnew" ]; then
       mv -f "${javasecurity}.rpmnew" "${javasecurity}"
@@ -639,7 +640,7 @@ exit 0
 
 # not-duplicated requires/provides/obsolate for normal/debug packages
 %global java_rpo() %{expand:
-Requires: fontconfig
+Requires: fontconfig%{?_isa}
 Requires: xorg-x11-fonts-Type1
 
 # Requires rest of java
@@ -671,10 +672,10 @@ Requires: javapackages-tools
 # Require zoneinfo data provided by tzdata-java subpackage.
 Requires: tzdata-java >= 2015d
 # libsctp.so.1 is being `dlopen`ed on demand
-Requires: lksctp-tools
+Requires: lksctp-tools%{?_isa}
 # there is need to depnd on exact version of nss
-Requires: nss %{NSS_BUILDTIME_VERSION}
-Requires: nss-softokn %{NSSSOFTOKN_BUILDTIME_VERSION}
+Requires: nss%{?_isa} %{NSS_BUILDTIME_VERSION}
+Requires: nss-softokn%{?_isa} %{NSSSOFTOKN_BUILDTIME_VERSION}
 # tool to copy jdk's configs - should be Recommends only, but then only dnf/yum eforce it, not rpm transaction and so no configs are persisted when pure rpm -u is run. I t may be consiedered as regression
 Requires:	copy-jdk-configs >= 1.1-3
 OrderWithRequires: copy-jdk-configs
@@ -785,7 +786,7 @@ Obsoletes: java-1.7.0-openjdk-accessibility%1
 
 Name:    java-%{javaver}-%{origin}-aarch32
 Version: %{javaver}.%{updatever}
-Release: 7.%{buildver}%{?dist}
+Release: 8.%{buildver}%{?dist}
 # java-1.5.0-ibm from jpackage.org set Epoch to 1 for unknown reasons,
 # and this change was brought into RHEL-4.  java-1.5.0-ibm packages
 # also included the epoch in their virtual provides.  This created a
@@ -849,8 +850,6 @@ Patch3: java-atk-wrapper-security.patch
 # Upstreamable patches
 # PR2737: Allow multiple initialization of PKCS11 libraries
 Patch5: multiple-pkcs11-library-init.patch
-# PR2095, RH1163501: 2048-bit DH upper bound too small for Fedora infrastructure (sync with IcedTea 2.x)
-Patch504: rh1163501.patch
 # S4890063, PR2304, RH1214835: HPROF: default text truncated when using doe=n option
 Patch511: rh1214835.patch
 # Turn off strict overflow on IndicRearrangementProcessor{,2}.cpp following 8140543: Arrange font actions
@@ -876,14 +875,6 @@ Patch523: pr2974-rh1337583.patch
 # PR3083, RH1346460: Regression in SSL debug output without an ECC provider
 Patch528: pr3083-rh1346460.patch
 
-# Arch-specific upstreamable patches
-# PR2415: JVM -Xmx requirement is too high on s390
-Patch100: java-1.8.0-openjdk-s390-java-opts.patch
-# Type fixing for s390
-Patch102: java-1.8.0-openjdk-size_t.patch
-# Use "%z" for size_t on s390 as size_t != intptr_t
-Patch103: s390-size_t_format_flags.patch
-
 # Include all sources in src.zip
 Patch7: include-all-srcs.patch
 # 8035341: Allow using a system installed libpng
@@ -901,38 +892,30 @@ Patch400: 8154313.patch
 # S6260348, PR3066: GTK+ L&F JTextComponent not respecting desktop caret blink rate
 Patch526: 6260348-pr3066.patch
 
-# Patches upstream and appearing in 8u112
-# S8044762, PR2960: com/sun/jdi/OptionTest.java test time out
-Patch521: 8044762-pr2960.patch
-# S8049226, PR2960: com/sun/jdi/OptionTest.java test times out again
-Patch522: 8049226-pr2960.patch
-
 # Patches ineligible for 8u
 # 8043805: Allow using a system-installed libjpeg
 Patch201: system-libjpeg.patch
+# Pathces 204-206 are serving for better check of debug symbols in native liraries
+Patch204: hotspot-remove-debuglink.patch
+Patch205: dont-add-unnecessary-debug-links.patch
+Patch206: hotspot-assembler-debuginfo.patch
+Patch207: PR3183.patch
 
 # Local fixes
 # PR1834, RH1022017: Reduce curves reported by SSL to those in NSS
 Patch525: pr1834-rh1022017.patch
+# RH1367357: lcms2: Out-of-bounds read in Type_MLU_Read()
+Patch533: rh1367357.patch
 
 # Non-OpenJDK fixes
 
 # AArch32 upstream changes
-# 8163469: aarch32: add support for ARMv6K CPU
-Patch1001: aarch32-8163469.patch
-# 8164042: aarch32: small update of nativeInstruction
-Patch1002: aarch32-8164042.patch
-# 8164041: support old pre-c++11 toolchains and ucLibc
-Patch1003: aarch32-8164041.patch
-# aarch32: C1 port
-Patch1004: aarch32-8164652.patch
-Patch1005: aarch32-8164652-jdk.patch
-# report "arm" as os.arch
-Patch1006: aarch32-archname.patch
-# fix scala crash, RHBZ#1379061
-Patch1007: aarch32-8167027.patch
-# 8u111 security fixes
-Patch1008: aarch32-8u111.patch
+Patch1001: aarch32-fmod.patch
+Patch1002: aarch32-8169576.patch
+Patch1003: aarch32-8169577.patch
+Patch1004: aarch32-8169872.patch
+Patch1005: aarch32-new_c1_load_patching.patch
+Patch1006: aarch32-native_wrapper.patch
 
 
 BuildRequires: autoconf
@@ -941,6 +924,7 @@ BuildRequires: alsa-lib-devel
 BuildRequires: binutils
 BuildRequires: cups-devel
 BuildRequires: desktop-file-utils
+BuildRequires: elfutils
 BuildRequires: fontconfig
 BuildRequires: freetype-devel
 BuildRequires: giflib-devel
@@ -1215,19 +1199,17 @@ sh %{SOURCE12}
 %patch201
 %patch202
 %patch203
+%patch204
+%patch205
+%patch206
+%patch207
 
 %patch1
 %patch3
 %patch5
 %patch7
 
-# s390 build fixes
-%patch100
-%patch102
-%patch103
-
 %patch502
-%patch504
 %patch506
 %patch507
 %patch508
@@ -1241,11 +1223,10 @@ sh %{SOURCE12}
 %patch517
 %patch518
 %patch400
-%patch521
-%patch522
 %patch523
 %patch525
 %patch528
+%patch533
 
 # AArch32 upstream patches
 %patch1001
@@ -1254,8 +1235,6 @@ sh %{SOURCE12}
 %patch1004
 %patch1005
 %patch1006
-%patch1007
-%patch1008
 
 # Extract systemtap tapsets
 %if %{with_systemtap}
@@ -1428,18 +1407,61 @@ $JAVA_HOME/bin/javac -d . %{SOURCE14}
 $JAVA_HOME/bin/java $(echo $(basename %{SOURCE14})|sed "s|\.java||")
 
 # Check debug symbols are present and can identify code
-SERVER_JVM="$JAVA_HOME/jre/lib/%{archinstall}/server/libjvm.so"
-if [ -f "$SERVER_JVM" ] ; then
-  nm -aCl "$SERVER_JVM" | grep javaCalls.cpp
-fi
-CLIENT_JVM="$JAVA_HOME/jre/lib/%{archinstall}/client/libjvm.so"
-if [ -f "$CLIENT_JVM" ] ; then
-  nm -aCl "$CLIENT_JVM" | grep javaCalls.cpp
-fi
-ZERO_JVM="$JAVA_HOME/jre/lib/%{archinstall}/zero/libjvm.so"
-if [ -f "$ZERO_JVM" ] ; then
-  nm -aCl "$ZERO_JVM" | grep javaCalls.cpp
-fi
+find "$JAVA_HOME" -iname '*.so' -print0 | while read -d $'\0' lib
+do
+  if [ -f "$lib" ] ; then
+    echo "Testing $lib for debug symbols"
+    # All these tests rely on RPM failing the build if the exit code of any set
+    # of piped commands is non-zero.
+
+    # Test for .debug_* sections in the shared object. This is the  main test.
+    # Stripped objects will not contain these.
+    eu-readelf -S "$lib" | grep "] .debug_"
+    test $(eu-readelf -S "$lib" | egrep "\]\ .debug_(info|abbrev)" | wc --lines) == 2
+
+    # Test FILE symbols. These will most likely be removed by anyting that
+    # manipulates symbol tables because it's generally useless. So a nice test
+    # that nothing has messed with symbols.
+    old_IFS="$IFS"
+    IFS=$'\n'
+    for line in $(eu-readelf -s "$lib" | grep "00000000      0 FILE    LOCAL  DEFAULT")
+    do
+     # We expect to see .cpp files, except for architectures like aarch64 and
+     # s390 where we expect .o and .oS files
+      echo "$line" | egrep "ABS ((.*/)?[-_a-zA-Z0-9]+\.(c|cc|cpp|cxx|o|oS))?$"
+    done
+    IFS="$old_IFS"
+
+    # If this is the JVM, look for javaCalls.(cpp|o) in FILEs, for extra sanity checking.
+    if [ "`basename $lib`" = "libjvm.so" ]; then
+      eu-readelf -s "$lib" | \
+        egrep "00000000      0 FILE    LOCAL  DEFAULT      ABS javaCalls.(cpp|o)$"
+    fi
+
+    # Test that there are no .gnu_debuglink sections pointing to another
+    # debuginfo file. There shouldn't be any debuginfo files, so the link makes
+    # no sense either.
+    eu-readelf -S "$lib" | grep 'gnu'
+    if eu-readelf -S "$lib" | grep '] .gnu_debuglink' | grep PROGBITS; then
+      echo "bad .gnu_debuglink section."
+      eu-readelf -x .gnu_debuglink "$lib"
+      false
+    fi
+  fi
+done
+
+# Make sure gdb can do a backtrace based on line numbers on libjvm.so
+#gdb -q "$JAVA_HOME/bin/java" <<EOF | tee gdb.out
+#handle SIGSEGV pass nostop noprint
+#set breakpoint pending on
+#break javaCalls.cpp:1
+#commands 1
+#backtrace
+#quit
+#end
+#run -version
+#EOF
+#grep 'JavaCallWrapper::JavaCallWrapper' gdb.out
 
 # Check src.zip has all sources. See RHBZ#1130490
 jar -tf $JAVA_HOME/src.zip | grep 'sun.misc.Unsafe'
