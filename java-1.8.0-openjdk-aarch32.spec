@@ -25,11 +25,11 @@
 %global ppc64le         ppc64le
 %global ppc64be         ppc64 ppc64p7
 %global multilib_arches %{power64} sparc64 x86_64
-%global jit_arches      %{ix86} x86_64 sparcv9 sparc64 %{aarch64} %{power64}
+%global jit_arches      %{ix86} x86_64 sparcv9 sparc64 %{aarch64} %{power64} %{arm}
 
-# by default we build debug build during main build only on intel arches
+# By default, we build a debug build during main build on JIT architectures
 # do not ever sync {arm}  to main packages, unles whole this package is merged.
-%ifarch %{ix86} x86_64 %{arm}
+%ifarch %{jit_arches}
 %global include_debug_build 1
 %else
 %global include_debug_build 0
@@ -47,7 +47,11 @@
 # is expected in one single case at the end of build
 %global rev_build_loop  %{build_loop2} %{build_loop1}
 
+%ifarch %{jit_arches}
 %global bootstrap_build 1
+%else
+%global bootstrap_build 0
+%endif
 
 %if %{bootstrap_build}
 %global targets bootcycle-images docs
@@ -142,11 +146,11 @@
 
 
 
-%ifarch %{jit_arches}
-%global with_systemtap 1
-%else
+#%ifarch %{jit_arches}
+#%global with_systemtap 1
+#%else
 %global with_systemtap 0
-%endif
+#%endif
 
 # Convert an absolute path to a relative path.  Each symbolic link is
 # specified relative to the directory in which it is installed so that
@@ -256,8 +260,10 @@ fi
 %ifarch %{jit_arches}
 # MetaspaceShared::generate_vtable_methods not implemented for PPC JIT
 %ifnarch %{power64}
+%ifnarch %{arm}
 #see https://bugzilla.redhat.com/show_bug.cgi?id=513605
 %{jrebindir %%1}/java -Xshare:dump >/dev/null 2>/dev/null
+%endif
 %endif
 %endif
 
@@ -550,8 +556,10 @@ exit 0
 %config(noreplace) %{_jvmdir}/%{jredir %%1}/lib/security/nss.cfg
 %ifarch %{jit_arches}
 %ifnarch %{power64}
+%ifnarch %{arm}
 %attr(664, root, root) %ghost %{_jvmdir}/%{jredir %%1}/lib/%{archinstall}/server/classes.jsa
 %attr(664, root, root) %ghost %{_jvmdir}/%{jredir %%1}/lib/%{archinstall}/client/classes.jsa
+%endif
 %endif
 %endif
 %{_jvmdir}/%{jredir %%1}/lib/%{archinstall}/server/
@@ -673,7 +681,7 @@ Requires: javapackages-tools
 Requires: tzdata-java >= 2015d
 # libsctp.so.1 is being `dlopen`ed on demand
 Requires: lksctp-tools%{?_isa}
-# there is need to depnd on exact version of nss
+# there is a need to depend on the exact version of NSS
 Requires: nss%{?_isa} %{NSS_BUILDTIME_VERSION}
 Requires: nss-softokn%{?_isa} %{NSSSOFTOKN_BUILDTIME_VERSION}
 # tool to copy jdk's configs - should be Recommends only, but then only dnf/yum eforce it, not rpm transaction and so no configs are persisted when pure rpm -u is run. I t may be consiedered as regression
@@ -850,6 +858,8 @@ Patch3: java-atk-wrapper-security.patch
 # Upstreamable patches
 # PR2737: Allow multiple initialization of PKCS11 libraries
 Patch5: multiple-pkcs11-library-init.patch
+# PR2095, RH1163501: 2048-bit DH upper bound too small for Fedora infrastructure (sync with IcedTea 2.x)
+Patch504: rh1163501.patch
 # S4890063, PR2304, RH1214835: HPROF: default text truncated when using doe=n option
 Patch511: rh1214835.patch
 # Turn off strict overflow on IndicRearrangementProcessor{,2}.cpp following 8140543: Arrange font actions
@@ -929,6 +939,7 @@ BuildRequires: fontconfig
 BuildRequires: freetype-devel
 BuildRequires: giflib-devel
 BuildRequires: gcc-c++
+BuildRequires: gdb
 BuildRequires: gtk2-devel
 BuildRequires: lcms2-devel
 BuildRequires: libjpeg-devel
@@ -1210,6 +1221,7 @@ sh %{SOURCE12}
 %patch7
 
 %patch502
+%patch504
 %patch506
 %patch507
 %patch508
