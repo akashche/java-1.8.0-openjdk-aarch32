@@ -657,15 +657,15 @@ OrderWithRequires: %{name}-headless%1 = %{epoch}:%{version}-%{release}
 
 
 # Standard JPackage base provides.
-#Provides: jre-%{javaver}-%{origin}%1 = %{epoch}:%{version}-%{release}
-#Provides: jre-%{origin}%1 = %{epoch}:%{version}-%{release}
-#Provides: jre-%{javaver}%1 = %{epoch}:%{version}-%{release}
-#Provides: java-%{javaver}%1 = %{epoch}:%{version}-%{release}
-#Provides: jre = %{javaver}%1
-#Provides: java-%{origin}%1 = %{epoch}:%{version}-%{release}
-#Provides: java%1 = %{epoch}:%{javaver}
+Provides: jre-%{javaver}-%{origin}%1 = %{epoch}:%{version}-%{release}
+Provides: jre-%{origin}%1 = %{epoch}:%{version}-%{release}
+Provides: jre-%{javaver}%1 = %{epoch}:%{version}-%{release}
+Provides: java-%{javaver}%1 = %{epoch}:%{version}-%{release}
+Provides: jre = %{javaver}%1
+Provides: java-%{origin}%1 = %{epoch}:%{version}-%{release}
+Provides: java%1 = %{epoch}:%{javaver}
 # Standard JPackage extensions provides.
-#Provides: java-fonts%1 = %{epoch}:%{version}
+Provides: java-fonts%1 = %{epoch}:%{version}
 
 Obsoletes: java-1.7.0-openjdk%1
 Obsoletes: java-1.5.0-gcj%1
@@ -697,27 +697,27 @@ Requires(postun): %{_sbindir}/alternatives
 Requires(postun):   chkconfig >= 1.7
 
 # Standard JPackage base provides.
-#Provides: jre-%{javaver}-%{origin}-headless%1 = %{epoch}:%{version}-%{release}
-#Provides: jre-%{origin}-headless%1 = %{epoch}:%{version}-%{release}
-#Provides: jre-%{javaver}-headless%1 = %{epoch}:%{version}-%{release}
-#Provides: java-%{javaver}-headless%1 = %{epoch}:%{version}-%{release}
-#Provides: jre-headless%1 = %{epoch}:%{javaver}
-#Provides: java-%{origin}-headless%1 = %{epoch}:%{version}-%{release}
-#Provides: java-headless%1 = %{epoch}:%{javaver}
+Provides: jre-%{javaver}-%{origin}-headless%1 = %{epoch}:%{version}-%{release}
+Provides: jre-%{origin}-headless%1 = %{epoch}:%{version}-%{release}
+Provides: jre-%{javaver}-headless%1 = %{epoch}:%{version}-%{release}
+Provides: java-%{javaver}-headless%1 = %{epoch}:%{version}-%{release}
+Provides: jre-headless%1 = %{epoch}:%{javaver}
+Provides: java-%{origin}-headless%1 = %{epoch}:%{version}-%{release}
+Provides: java-headless%1 = %{epoch}:%{javaver}
 # Standard JPackage extensions provides.
-#Provides: jndi%1 = %{epoch}:%{version}
-#Provides: jndi-ldap%1 = %{epoch}:%{version}
-#Provides: jndi-cos%1 = %{epoch}:%{version}
-#Provides: jndi-rmi%1 = %{epoch}:%{version}
-#Provides: jndi-dns%1 = %{epoch}:%{version}
-#Provides: jaas%1 = %{epoch}:%{version}
-#Provides: jsse%1 = %{epoch}:%{version}
-#Provides: jce%1 = %{epoch}:%{version}
-#Provides: jdbc-stdext%1 = 4.1
-#Provides: java-sasl%1 = %{epoch}:%{version}
+Provides: jndi%1 = %{epoch}:%{version}
+Provides: jndi-ldap%1 = %{epoch}:%{version}
+Provides: jndi-cos%1 = %{epoch}:%{version}
+Provides: jndi-rmi%1 = %{epoch}:%{version}
+Provides: jndi-dns%1 = %{epoch}:%{version}
+Provides: jaas%1 = %{epoch}:%{version}
+Provides: jsse%1 = %{epoch}:%{version}
+Provides: jce%1 = %{epoch}:%{version}
+Provides: jdbc-stdext%1 = 4.1
+Provides: java-sasl%1 = %{epoch}:%{version}
 
 #https://bugzilla.redhat.com/show_bug.cgi?id=1312019
-#Provides: /usr/bin/jjs
+Provides: /usr/bin/jjs
 
 Obsoletes: java-1.7.0-openjdk-headless%1
 }
@@ -736,13 +736,13 @@ Requires(postun): %{_sbindir}/alternatives
 Requires(postun):   chkconfig >= 1.7
 
 # Standard JPackage devel provides.
-#Provides: java-sdk-%{javaver}-%{origin}%1 = %{epoch}:%{version}
-#Provides: java-sdk-%{javaver}%1 = %{epoch}:%{version}
-#Provides: java-sdk-%{origin}%1 = %{epoch}:%{version}
-#Provides: java-sdk%1 = %{epoch}:%{javaver}
-#Provides: java-%{javaver}-devel%1 = %{epoch}:%{version}
-#Provides: java-devel-%{origin}%1 = %{epoch}:%{version}
-#Provides: java-devel%1 = %{epoch}:%{javaver}
+Provides: java-sdk-%{javaver}-%{origin}%1 = %{epoch}:%{version}
+Provides: java-sdk-%{javaver}%1 = %{epoch}:%{version}
+Provides: java-sdk-%{origin}%1 = %{epoch}:%{version}
+Provides: java-sdk%1 = %{epoch}:%{javaver}
+Provides: java-%{javaver}-devel%1 = %{epoch}:%{version}
+Provides: java-devel-%{origin}%1 = %{epoch}:%{version}
+Provides: java-devel%1 = %{epoch}:%{javaver}
 
 Obsoletes: java-1.7.0-openjdk-devel%1
 Obsoletes: java-1.5.0-gcj-devel%1
@@ -768,8 +768,8 @@ Requires(postun): %{_sbindir}/alternatives
 Requires(postun):   chkconfig >= 1.7
 
 # Standard JPackage javadoc provides.
-#Provides: java-javadoc%1 = %{epoch}:%{version}-%{release}
-#Provides: java-%{javaver}-javadoc%1 = %{epoch}:%{version}-%{release}
+Provides: java-javadoc%1 = %{epoch}:%{version}-%{release}
+Provides: java-%{javaver}-javadoc%1 = %{epoch}:%{version}-%{release}
 
 Obsoletes: java-1.7.0-openjdk-javadoc%1
 
@@ -956,7 +956,7 @@ BuildRequires: nss-devel
 BuildRequires: pkgconfig
 BuildRequires: xorg-x11-proto-devel
 BuildRequires: zip
-BuildRequires: java-1.8.0-openjdk-aarch32-devel
+BuildRequires: java-1.8.0-openjdk-devel
 # Zero-assembler build requirement.
 %ifnarch %{jit_arches}
 BuildRequires: libffi-devel
@@ -1343,7 +1343,7 @@ bash ../../configure \
     --with-milestone="fcs" \
     --with-update-version=%{updatever} \
     --with-build-number=%{buildver} \
-    --with-boot-jdk=$(echo /usr/lib/jvm/java-1.8.0-openjdk-aarch32-*) \
+    --with-boot-jdk=/usr/lib/jvm/java-openjdk \
     --with-debug-level=$debugbuild \
     --enable-unlimited-crypto \
     --enable-system-nss \
@@ -1895,30 +1895,42 @@ require "copy_jdk_configs.lua"
 - 8u112 sources tarball
 - add aarch32 post-u112 upstream patches
 
-* Tue Oct 25 2016 Alex Kashchenko <akashche@redhat.com> - 1:1.8.0.102-7.160812
+* Tue Oct 25 2016 Alex Kashchenko <akashche@redhat.com> - 1:1.8.0.102-11.160812
 - added aarch32-8u111.patch
 - removed corba_typo_fix.patch
+
+* Tue Oct 04 2016 Jiri Vanek <jvanek@redhat.com> - 1:1.8.0.102-10.160812
 - enabled debug build
 
-* Mon Oct 03 2016 Alex Kashchenko <akashche@redhat.com> - 1:1.8.0.102-6.160812
+* Mon Oct 03 2016 Alex Kashchenko <akashche@redhat.com> - 1:1.8.0.102-9.160812
 - added aarch32-8167027.patch
 - fixes RHBZ#1379061
 
-* Fri Sep 30 2016 Alex Kashchenko <akashche@redhat.com> - 1:1.8.0.102-5.160812
+* Fri Sep 30 2016 Alex Kashchenko <akashche@redhat.com> - 1:1.8.0.102-8.160812
 - added aarch32-archname.patch
 
-* Wed Sep 21 2016 Alex Kashchenko <akashche@redhat.com> - 1:1.8.0.102-4.160812
+* Thu Sep 22 2016 Alex Kashchenko <akashche@redhat.com> - 1:1.8.0.102-7.160812
+- revert boot jdk back to zero
+
+* Wed Sep 21 2016 Alex Kashchenko <akashche@redhat.com> - 1:1.8.0.102-6.160812
 - fixed macro in comments
+- re-enabled openjdk-aarch32 as a boot jdk
+- enabled provides for both java and javac
+
+* Tue Sep 20 2016 Jiri Vanek <jvanek@redhat.com> - 1:1.8.0.102-5.160812
 - sync with normal java packages:
 -  added zipped javadocs
 -  updated systemtap
 -  added (commented out) provides on jjs
 
-* Sat Sep 10 2016 Alex Kashchenko <akashche@redhat.com> - 1:1.8.0.102-3.160812
+* Sat Sep 10 2016 Alex Kashchenko <akashche@redhat.com> - 1:1.8.0.102-4.160812
 - declared check_sum_presented_in_spec and used in prep and check
 - it is checking that latest packed java.security is mentioned in listing
 - added ECDSA check
 - added %%{_arch} postfix to alternatives
+
+* Wed Aug 31 2016 Alex Kashchenko <akashche@redhat.com> - 1:1.8.0.102-3.160812
+- revert boot jdk back to zero
 
 * Mon Aug 29 2016 Alex Kashchenko <akashche@redhat.com> - 1:1.8.0.102-2.160812
 - added C1 JIT patches
