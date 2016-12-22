@@ -926,6 +926,7 @@ Patch1003: aarch32-8169577.patch
 Patch1004: aarch32-8169872.patch
 Patch1005: aarch32-new_c1_load_patching.patch
 Patch1006: aarch32-native_wrapper.patch
+Patch1007: aarch32-1100.patch
 
 
 BuildRequires: autoconf
@@ -1247,6 +1248,7 @@ sh %{SOURCE12}
 %patch1004
 %patch1005
 %patch1006
+%patch1007
 
 # Extract systemtap tapsets
 %if %{with_systemtap}
