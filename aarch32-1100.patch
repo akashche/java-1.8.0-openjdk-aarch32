@@ -1,0 +1,12 @@
+diff -r 2dd4c1dba7a3 common/autoconf/boot-jdk.m4
+--- openjdk/common/autoconf/boot-jdk.m4	Wed Nov 09 12:38:44 2016 +0300
++++ openjdk/common/autoconf/boot-jdk.m4	Thu Dec 22 12:17:18 2016 +0000
+@@ -334,7 +334,7 @@
+   # Maximum amount of heap memory.
+   # Maximum stack size.
+   if test "x$BOOT_JDK_BITS" = x32; then
+-    JVM_MAX_HEAP=1100M
++    JVM_MAX_HEAP=768M
+     STACK_SIZE=768
+   else
+     # Running Javac on a JVM on a 64-bit machine, takes more space since 64-bit

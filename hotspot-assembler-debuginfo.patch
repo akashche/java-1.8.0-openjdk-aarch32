@@ -1,0 +1,20 @@
+--- openjdk/hotspot/make/linux/makefiles/rules.make.orig	2016-12-06 12:25:19.099768390 -0500
++++ openjdk/hotspot/make/linux/makefiles/rules.make	2016-12-06 12:25:42.449990112 -0500
+@@ -34,7 +34,7 @@
+ CC_COMPILE       = $(CC) $(CXXFLAGS) $(CFLAGS)
+ CXX_COMPILE      = $(CXX) $(CXXFLAGS) $(CFLAGS)
+ 
+-AS.S            = $(AS) $(ASFLAGS)
++AS.S            = $(AS) -g $(ASFLAGS)
+ 
+ COMPILE.CC       = $(CC_COMPILE) -c
+ GENASM.CC        = $(CC_COMPILE) -S
+@@ -169,7 +169,7 @@
+ %.o: %.s
+ 	@echo Assembling $<
+ 	$(QUIETLY) $(REMOVE_TARGET)
+-	$(QUIETLY) $(AS.S) $(DEPFLAGS) -o $@ $< $(COMPILE_DONE)
++	$(QUIETLY) $(AS.S) -g $(DEPFLAGS) -o $@ $< $(COMPILE_DONE)
+ 
+ %.s: %.cpp
+ 	@echo Generating assembly for $<
