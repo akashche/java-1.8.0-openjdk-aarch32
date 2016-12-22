@@ -794,7 +794,7 @@ Obsoletes: java-1.7.0-openjdk-accessibility%1
 
 Name:    java-%{javaver}-%{origin}-aarch32
 Version: %{javaver}.%{updatever}
-Release: 8.%{buildver}%{?dist}
+Release: 1.%{buildver}%{?dist}
 # java-1.5.0-ibm from jpackage.org set Epoch to 1 for unknown reasons,
 # and this change was brought into RHEL-4.  java-1.5.0-ibm packages
 # also included the epoch in their virtual provides.  This created a
@@ -1886,6 +1886,15 @@ require "copy_jdk_configs.lua"
 %endif
 
 %changelog
+* Thu Dec 22 2016 Alex Kashchenko <akashche@redhat.com> - 1:1.8.0.112-1.161109
+- fontconfig and nss restricted by isa
+- debug subpackages allowed
+- eu-readelfs on libraries, gdb call
+- java SSL/TLS implementation: should follow the policies of system-wide crypto policy
+- sync patches with mainline package
+- 8u112 sources tarball
+- add aarch32 post-u112 upstream patches
+
 * Tue Oct 25 2016 Alex Kashchenko <akashche@redhat.com> - 1:1.8.0.102-7.160812
 - added aarch32-8u111.patch
 - removed corba_typo_fix.patch
