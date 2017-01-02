@@ -81,6 +81,12 @@
 %global ourldflags %{__global_ldflags}
 %endif
 %endif
+%ifarch %{arm}
+# Disable hardened build on aarch32. Work-around for RHBZ#1290936.
+%undefine _hardened_build
+%global ourcppflags %{nil}
+%global ourldflags %{nil}
+%endif
 
 # With diabled nss is NSS deactivated, so in NSS_LIBDIR can be wrong path
 # the initialisation must be here. LAter the pkg-connfig have bugy behaviour
@@ -794,7 +800,7 @@ Obsoletes: java-1.7.0-openjdk-accessibility%1
 
 Name:    java-%{javaver}-%{origin}-aarch32
 Version: %{javaver}.%{updatever}
-Release: 1.%{buildver}%{?dist}
+Release: 2.%{buildver}%{?dist}
 # java-1.5.0-ibm from jpackage.org set Epoch to 1 for unknown reasons,
 # and this change was brought into RHEL-4.  java-1.5.0-ibm packages
 # also included the epoch in their virtual provides.  This created a
@@ -926,7 +932,6 @@ Patch1003: aarch32-8169577.patch
 Patch1004: aarch32-8169872.patch
 Patch1005: aarch32-new_c1_load_patching.patch
 Patch1006: aarch32-native_wrapper.patch
-Patch1007: aarch32-1100.patch
 
 
 BuildRequires: autoconf
@@ -1248,7 +1253,6 @@ sh %{SOURCE12}
 %patch1004
 %patch1005
 %patch1006
-%patch1007
 
 # Extract systemtap tapsets
 %if %{with_systemtap}
@@ -1886,6 +1890,11 @@ require "copy_jdk_configs.lua"
 %endif
 
 %changelog
+* Mon Jan 2 2017 Alex Kashchenko <akashche@redhat.com> - 1:1.8.0.112-2.161109
+- disable hardened build flags
+- remove Xmx patch
+- fixes RHBZ#1290936
+
 * Thu Dec 22 2016 Alex Kashchenko <akashche@redhat.com> - 1:1.8.0.112-1.161109
 - fontconfig and nss restricted by isa
 - debug subpackages allowed
