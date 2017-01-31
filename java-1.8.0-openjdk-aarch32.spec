@@ -256,7 +256,12 @@ if [ "$1" -gt 1 ]; then
        "${sum}" = '134a37a84983b620f4d8d51a550c0c38' -o \\
        "${sum}" = '5ea976e209d0d0b5b6ab148416123e02' -o \\
        "${sum}" = '059d61cfbb47e337b011ecda9350db9b' -o \\
-       "${sum}" = '5ab4c77cf14fbd7f7ee6f51a7a73d88c' ]; then
+       "${sum}" = '0dd41ddb4d1fb25975f7faab2c23e151' -o \\
+       "${sum}" = '59dafb237e5def3ccf8a3ad589fb2777' -o \\
+       "${sum}" = '84d16306cd4c2ae76ba81a3775e92cee' -o \\
+       "${sum}" = '5ab4c77cf14fbd7f7ee6f51a7a73d88c' -o \\
+       "${sum}" = 'b727442b4ac0e3b8a26ec9741ad463e5' -o \\
+       "${sum}" = 'a59c6d96aeae1303fb8ba85e97588e9d' ]; then
     if [ -f "${javasecurity}.rpmnew" ]; then
       mv -f "${javasecurity}.rpmnew" "${javasecurity}"
     fi
@@ -800,7 +805,7 @@ Obsoletes: java-1.7.0-openjdk-accessibility%1
 
 Name:    java-%{javaver}-%{origin}-aarch32
 Version: %{javaver}.%{updatever}
-Release: 2.%{buildver}%{?dist}
+Release: 3.%{buildver}%{?dist}
 # java-1.5.0-ibm from jpackage.org set Epoch to 1 for unknown reasons,
 # and this change was brought into RHEL-4.  java-1.5.0-ibm packages
 # also included the epoch in their virtual provides.  This created a
@@ -932,6 +937,7 @@ Patch1003: aarch32-8169577.patch
 Patch1004: aarch32-8169872.patch
 Patch1005: aarch32-new_c1_load_patching.patch
 Patch1006: aarch32-native_wrapper.patch
+Patch1007: aarch32-8u121.patch
 
 
 BuildRequires: autoconf
@@ -1242,7 +1248,7 @@ sh %{SOURCE12}
 %patch518
 %patch400
 %patch523
-%patch525
+#%patch525
 %patch528
 %patch533
 
@@ -1253,6 +1259,8 @@ sh %{SOURCE12}
 %patch1004
 %patch1005
 %patch1006
+%patch1007
+%patch525
 
 # Extract systemtap tapsets
 %if %{with_systemtap}
@@ -1890,6 +1898,9 @@ require "copy_jdk_configs.lua"
 %endif
 
 %changelog
+* Mon Jan 30 2017 Alex Kashchenko <akashche@redhat.com> - 1:1.8.0.112-3.161109
+- 8u121 update
+
 * Mon Jan 2 2017 Alex Kashchenko <akashche@redhat.com> - 1:1.8.0.112-2.161109
 - disable hardened build flags
 - remove Xmx patch
