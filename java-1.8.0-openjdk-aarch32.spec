@@ -779,8 +779,8 @@ Requires(postun): %{_sbindir}/alternatives
 Requires(postun):   chkconfig >= 1.7
 
 # Standard JPackage javadoc provides.
-Provides: java-javadoc%1 = %{epoch}:%{version}-%{release}
-Provides: java-%{javaver}-javadoc%1 = %{epoch}:%{version}-%{release}
+#Provides: java-javadoc%1 = %{epoch}:%{version}-%{release}
+#Provides: java-%{javaver}-javadoc%1 = %{epoch}:%{version}-%{release}
 
 Obsoletes: java-1.7.0-openjdk-javadoc%1
 
@@ -1896,6 +1896,7 @@ require "copy_jdk_configs.lua"
 * Sun Feb 19 2017 Alex Kashchenko <akashche@redhat.com> - 1:1.8.0.121-1.170210
 - sources tarball updated to jdk8u121-b13-aarch32-170210
 - add libjvm.so and libjava.so symlinks to jre/lib/arm directory
+- disable javadoc provides
 - fixes RHBZ#1412953
 
 * Fri Feb 10 2017 Fedora Release Engineering <releng@fedoraproject.org> - 1:1.8.0.112-4.161109
