@@ -170,7 +170,7 @@
 # note, following three variables are sedded from update_sources if used correctly. Hardcode them rather there.
 %global project         aarch32-port
 %global repo            jdk8u
-%global revision        jdk8u112-b16-aarch32-161109
+%global revision        jdk8u121-b13-aarch32-170210
 # eg # jdk8u60-b27 -> jdk8u60 or # aarch64-jdk8u60-b27 -> aarch64-jdk8u60  (dont forget spec escape % by %%)
 %global whole_update    %(VERSION=%{revision}; echo ${VERSION%%-*})
 # eg  jdk8u60 -> 60 or aarch64-jdk8u60 -> 60
@@ -805,7 +805,7 @@ Obsoletes: java-1.7.0-openjdk-accessibility%1
 
 Name:    java-%{javaver}-%{origin}-aarch32
 Version: %{javaver}.%{updatever}
-Release: 3.%{buildver}%{?dist}
+Release: 1.%{buildver}%{?dist}
 # java-1.5.0-ibm from jpackage.org set Epoch to 1 for unknown reasons,
 # and this change was brought into RHEL-4.  java-1.5.0-ibm packages
 # also included the epoch in their virtual provides.  This created a
@@ -931,13 +931,6 @@ Patch533: rh1367357.patch
 # Non-OpenJDK fixes
 
 # AArch32 upstream changes
-Patch1001: aarch32-fmod.patch
-Patch1002: aarch32-8169576.patch
-Patch1003: aarch32-8169577.patch
-Patch1004: aarch32-8169872.patch
-Patch1005: aarch32-new_c1_load_patching.patch
-Patch1006: aarch32-native_wrapper.patch
-Patch1007: aarch32-8u121.patch
 
 
 BuildRequires: autoconf
@@ -1248,19 +1241,12 @@ sh %{SOURCE12}
 %patch518
 %patch400
 %patch523
-#%patch525
+%patch525
 %patch528
 %patch533
 
 # AArch32 upstream patches
-%patch1001
-%patch1002
-%patch1003
-%patch1004
-%patch1005
-%patch1006
-%patch1007
-%patch525
+
 
 # Extract systemtap tapsets
 %if %{with_systemtap}
@@ -1515,6 +1501,15 @@ pushd %{buildoutputdir  $suffix}/images/%{j2sdkimage}
 #install jsa directories so we can owe them
 mkdir -p $RPM_BUILD_ROOT%{_jvmdir}/%{jredir $suffix}/lib/%{archinstall}/server/
 mkdir -p $RPM_BUILD_ROOT%{_jvmdir}/%{jredir $suffix}/lib/%{archinstall}/client/
+
+# RHBZ#1412953
+pushd $RPM_BUILD_ROOT%{_jvmdir}/%{jredir $suffix}/lib/%{archinstall}/client/
+    ln -sf ../../aarch32/client/libjvm.so
+popd
+pushd $RPM_BUILD_ROOT%{_jvmdir}/%{jredir $suffix}/lib/%{archinstall}/
+    ln -sf ../aarch32/libjava.so
+popd
+
 
   # Install main files.
   install -d -m 755 $RPM_BUILD_ROOT%{_jvmdir}/%{sdkdir $suffix}
@@ -1898,6 +1893,11 @@ require "copy_jdk_configs.lua"
 %endif
 
 %changelog
+* Sun Feb 19 2017 Alex Kashchenko <akashche@redhat.com> - 1:1.8.0.121-1.170210
+- sources tarball updated to jdk8u121-b13-aarch32-170210
+- add libjvm.so and libjava.so symlinks to jre/lib/arm directory
+- fixes RHBZ#1412953
+
 * Mon Jan 30 2017 Alex Kashchenko <akashche@redhat.com> - 1:1.8.0.112-3.161109
 - 8u121 update
 
