@@ -805,7 +805,7 @@ Obsoletes: java-1.7.0-openjdk-accessibility%1
 
 Name:    java-%{javaver}-%{origin}-aarch32
 Version: %{javaver}.%{updatever}
-Release: 1.%{buildver}%{?dist}
+Release: 2.%{buildver}%{?dist}
 # java-1.5.0-ibm from jpackage.org set Epoch to 1 for unknown reasons,
 # and this change was brought into RHEL-4.  java-1.5.0-ibm packages
 # also included the epoch in their virtual provides.  This created a
@@ -1507,7 +1507,42 @@ pushd $RPM_BUILD_ROOT%{_jvmdir}/%{jredir $suffix}/lib/%{archinstall}/client/
     ln -sf ../../aarch32/client/libjvm.so
 popd
 pushd $RPM_BUILD_ROOT%{_jvmdir}/%{jredir $suffix}/lib/%{archinstall}/
-    ln -sf ../aarch32/libjava.so
+    ln -sf ../aarch32/jli
+    for lib in \
+        libattach.so \
+        libawt_headless.so \
+        libawt.so \
+        libawt_xawt.so \
+        libdt_socket.so \
+        libfontmanager.so \
+        libhprof.so \
+        libinstrument.so \
+        libj2gss.so \
+        libj2pcsc.so \
+        libj2pkcs11.so \
+        libjaas_unix.so \
+        libjava_crw_demo.so \
+        libjavajpeg.so \
+        libjava.so \
+        libjawt.so \
+        libjdwp.so \
+        libjsdt.so \
+        libjsig.so \
+        libjsoundalsa.so \
+        libjsound.so \
+        liblcms.so \
+        libmanagement.so \
+        libmlib_image.so \
+        libnet.so \
+        libnio.so \
+        libnpt.so \
+        libsctp.so \
+        libsplashscreen.so \
+        libsunec.so \
+        libunpack.so \
+        libverify.so \
+        libzip.so \
+        ; do ln -sf ../aarch32/$lib ; done
 popd
 
 
@@ -1893,6 +1928,9 @@ require "copy_jdk_configs.lua"
 %endif
 
 %changelog
+* Mon Feb 20 2017 Alex Kashchenko <akashche@redhat.com> - 1:1.8.0.121-2.170210
+- add symlinks to jre/lib/arm directory for all aarch32 libs
+
 * Sun Feb 19 2017 Alex Kashchenko <akashche@redhat.com> - 1:1.8.0.121-1.170210
 - sources tarball updated to jdk8u121-b13-aarch32-170210
 - add libjvm.so and libjava.so symlinks to jre/lib/arm directory
