@@ -797,7 +797,7 @@ Obsoletes: java-1.7.0-openjdk-accessibility%1
 
 Name:    java-%{javaver}-%{origin}-aarch32
 Version: %{javaver}.%{updatever}
-Release: 1.%{buildver}%{?dist}
+Release: 2.%{buildver}%{?dist}
 # java-1.5.0-ibm from jpackage.org set Epoch to 1 for unknown reasons,
 # and this change was brought into RHEL-4.  java-1.5.0-ibm packages
 # also included the epoch in their virtual provides.  This created a
@@ -994,7 +994,7 @@ BuildRequires: nss-devel
 BuildRequires: pkgconfig
 BuildRequires: xorg-x11-proto-devel
 BuildRequires: zip
-BuildRequires: java-1.8.0-openjdk-aarch32-devel
+BuildRequires: java-1.8.0-openjdk-devel
 # Zero-assembler build requirement.
 %ifnarch %{jit_arches}
 BuildRequires: libffi-devel
@@ -1417,7 +1417,7 @@ bash ../../configure \
     --with-milestone="fcs" \
     --with-update-version=%{updatever} \
     --with-build-number=%{buildver} \
-    --with-boot-jdk=$(echo /usr/lib/jvm/java-1.8.0-openjdk-aarch32-*) \
+    --with-boot-jdk=/usr/lib/jvm/java-openjdk \
     --with-debug-level=$debugbuild \
     --enable-unlimited-crypto \
     --enable-system-nss \
@@ -1995,6 +1995,9 @@ require "copy_jdk_configs.lua"
 %endif
 
 %changelog
+* Sun Apr 30 2017 Alex Kashchenko <akashche@redhat.com> - 1:1.8.0.131-2.170420
+- revert boot jdk to zero due to koschei arch-specific dep problem persists
+
 * Sat Apr 29 2017 Alex Kashchenko <akashche@redhat.com> - 1:1.8.0.131-1.170420
 - update sources to 8u131
 - sync with mainline package
