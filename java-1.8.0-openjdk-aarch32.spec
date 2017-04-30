@@ -35,6 +35,13 @@
 %global include_debug_build 0
 %endif
 
+# On x86_64 and AArch64, we use the Shenandoah HotSpot
+%ifarch x86_64 %{aarch64}
+%global use_shenandoah_hotspot 1
+%else
+%global use_shenandoah_hotspot 0
+%endif
+
 %if %{include_debug_build}
 %global build_loop2 %{debug_suffix}
 %else
@@ -50,7 +57,7 @@
 %ifarch %{jit_arches}
 %global bootstrap_build 1
 %else
-%global bootstrap_build 0
+%global bootstrap_build 1
 %endif
 
 %if %{bootstrap_build}
@@ -108,55 +115,70 @@
 %global __provides_exclude ^(%{_privatelibs})$
 %global __requires_exclude ^(%{_privatelibs})$
 
+# In some cases, the arch used by the JDK does
+# not match _arch.
+# Also, in some cases, the machine name used by SystemTap
+# does not match that given by _build_cpu
 %ifarch x86_64
 %global archinstall amd64
+%global stapinstall x86_64
 %endif
 %ifarch ppc
 %global archinstall ppc
+%global stapinstall powerpc
 %endif
 %ifarch %{ppc64be}
 %global archinstall ppc64
+%global stapinstall powerpc
 %endif
 %ifarch %{ppc64le}
 %global archinstall ppc64le
+%global stapinstall powerpc
 %endif
 %ifarch %{ix86}
 %global archinstall i386
+%global stapinstall i386
 %endif
 %ifarch ia64
 %global archinstall ia64
+%global stapinstall ia64
 %endif
 %ifarch s390
 %global archinstall s390
+%global stapinstall s390
 %endif
 %ifarch s390x
 %global archinstall s390x
+%global stapinstall s390
 %endif
 %ifarch %{arm}
 %global archinstall arm
+%global stapinstall arm
 %endif
 %ifarch %{aarch64}
 %global archinstall aarch64
+%global stapinstall arm64
 %endif
 # 32 bit sparc, optimized for v9
 %ifarch sparcv9
 %global archinstall sparc
+%global stapinstall %{_build_cpu}
 %endif
 # 64 bit sparc
 %ifarch sparc64
 %global archinstall sparcv9
+%global stapinstall %{_build_cpu}
 %endif
 %ifnarch %{jit_arches}
 %global archinstall %{_arch}
 %endif
 
 
-
-#%ifarch %{jit_arches}
-#%global with_systemtap 1
-#%else
+%ifarch %{jit_arches}
 %global with_systemtap 0
-#%endif
+%else
+%global with_systemtap 0
+%endif
 
 # Convert an absolute path to a relative path.  Each symbolic link is
 # specified relative to the directory in which it is installed so that
@@ -170,7 +192,7 @@
 # note, following three variables are sedded from update_sources if used correctly. Hardcode them rather there.
 %global project         aarch32-port
 %global repo            jdk8u
-%global revision        jdk8u121-b13-aarch32-170210
+%global revision        jdk8u131-b12-aarch32-170420
 # eg # jdk8u60-b27 -> jdk8u60 or # aarch64-jdk8u60-b27 -> aarch64-jdk8u60  (dont forget spec escape % by %%)
 %global whole_update    %(VERSION=%{revision}; echo ${VERSION%%-*})
 # eg  jdk8u60 -> 60 or aarch64-jdk8u60 -> 60
@@ -214,18 +236,12 @@
 # for the primary arch for now). Systemtap uses the machine name
 # aka build_cpu as architecture specific directory name.
 %global tapsetroot /usr/share/systemtap
-%global tapsetdir %{tapsetroot}/tapset/%{_build_cpu}
+%global tapsetdir %{tapsetroot}/tapset/%{stapinstall}
 %endif
 
 # not-duplicated scriplets for normal/debug packages
 %global update_desktop_icons /usr/bin/gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
 
-%global check_sum_presented_in_spec() %{expand:
-md5sum %1
-currentMd5sum=`md5sum %1 | sed "s;\\s.*;;"`
-specfile=%{_specdir}/%{name}.spec
-grep -e md5sum -A 20 $specfile  | grep $currentMd5sum
-}
 
 %global post_script() %{expand:
 update-desktop-database %{_datadir}/applications &> /dev/null || :
@@ -235,38 +251,6 @@ exit 0
 
 
 %global post_headless() %{expand:
-# FIXME: identical binaries are copied, not linked. This needs to be
-# fixed upstream.
-# The pretrans lua scriptlet prevents an unmodified java.security
-# from being replaced via an update. It gets created as
-# java.security.rpmnew instead. This invalidates the patch of
-# JDK-8061210 of the January 2015 CPU, JDK-8043201 of the
-# July 2015 CPU and JDK-8141287 of the January 2016 CPU. We
-# fix this via a post scriptlet which runs on updates.
-if [ "$1" -gt 1 ]; then
-  javasecurity="%{_jvmdir}/%{uniquesuffix}/jre/lib/security/java.security"
-  sum=$(md5sum "${javasecurity}" | cut -d' ' -f1)
-  # This is the md5sum of an unmodified java.security file
-  if [ "${sum}" = '1690ac33955594f71dc952c9e83fd396' -o \\
-       "${sum}" = 'b138695d0c0ea947e64a21a627d973ba' -o \\
-       "${sum}" = 'd17958676bdb9f9d941c8a59655311fb' -o \\
-       "${sum}" = '5463aef7dbf0bbcfe79e0336a7f92701' -o \\
-       "${sum}" = '400cc64d4dd31f36dc0cc2c701d603db' -o \\
-       "${sum}" = '321342219bb130d238ff144b9e5dbfc1' -o \\
-       "${sum}" = '134a37a84983b620f4d8d51a550c0c38' -o \\
-       "${sum}" = '5ea976e209d0d0b5b6ab148416123e02' -o \\
-       "${sum}" = '059d61cfbb47e337b011ecda9350db9b' -o \\
-       "${sum}" = '0dd41ddb4d1fb25975f7faab2c23e151' -o \\
-       "${sum}" = '59dafb237e5def3ccf8a3ad589fb2777' -o \\
-       "${sum}" = '84d16306cd4c2ae76ba81a3775e92cee' -o \\
-       "${sum}" = '5ab4c77cf14fbd7f7ee6f51a7a73d88c' -o \\
-       "${sum}" = 'b727442b4ac0e3b8a26ec9741ad463e5' -o \\
-       "${sum}" = 'a59c6d96aeae1303fb8ba85e97588e9d' ]; then
-    if [ -f "${javasecurity}.rpmnew" ]; then
-      mv -f "${javasecurity}.rpmnew" "${javasecurity}"
-    fi
-  fi
-fi
 
 %ifarch %{jit_arches}
 # MetaspaceShared::generate_vtable_methods not implemented for PPC JIT
@@ -334,6 +318,15 @@ update-alternatives --install %{_jvmdir}/jre-%{javaver}-%{origin} jre_%{javaver}
 
 update-desktop-database %{_datadir}/applications &> /dev/null || :
 /bin/touch --no-create %{_datadir}/icons/hicolor &>/dev/null || :
+
+# see pretrans where this file is declared
+# also see that pretrans is only for nondebug
+if [ ! "%1" == %{debug_suffix} ]; then
+  if [ -f %{_libexecdir}/copy_jdk_configs_fixFiles.sh ] ; then
+    sh  %{_libexecdir}/copy_jdk_configs_fixFiles.sh %{rpm_state_dir}/%{name}.%{_arch}  %{_jvmdir}/%{sdkdir %%1}
+  fi
+fi
+
 exit 0
 }
 
@@ -546,7 +539,6 @@ exit 0
 %{_jvmprivdir}/*
 %{jvmjardir %%1}
 %dir %{_jvmdir}/%{jredir %%1}/lib/security
-%{_jvmdir}/%{jredir %%1}/lib/security/cacerts
 %config(noreplace) %{_jvmdir}/%{jredir %%1}/lib/security/US_export_policy.jar
 %config(noreplace) %{_jvmdir}/%{jredir %%1}/lib/security/local_policy.jar
 %config(noreplace) %{_jvmdir}/%{jredir %%1}/lib/security/java.policy
@@ -663,8 +655,8 @@ Requires: fontconfig%{?_isa}
 Requires: xorg-x11-fonts-Type1
 
 # Requires rest of java
-Requires: %{name}-headless%1 = %{epoch}:%{version}-%{release}
-OrderWithRequires: %{name}-headless%1 = %{epoch}:%{version}-%{release}
+Requires: %{name}-headless%1%{?_isa} = %{epoch}:%{version}-%{release}
+OrderWithRequires: %{name}-headless%1%{?_isa} = %{epoch}:%{version}-%{release}
 
 
 # Standard JPackage base provides.
@@ -696,7 +688,7 @@ Requires: lksctp-tools%{?_isa}
 Requires: nss%{?_isa} %{NSS_BUILDTIME_VERSION}
 Requires: nss-softokn%{?_isa} %{NSSSOFTOKN_BUILDTIME_VERSION}
 # tool to copy jdk's configs - should be Recommends only, but then only dnf/yum eforce it, not rpm transaction and so no configs are persisted when pure rpm -u is run. I t may be consiedered as regression
-Requires:	copy-jdk-configs >= 1.1-3
+Requires:	copy-jdk-configs >= 2.2
 OrderWithRequires: copy-jdk-configs
 # Post requires alternatives to install tool alternatives.
 Requires(post):   %{_sbindir}/alternatives
@@ -735,8 +727,8 @@ Obsoletes: java-1.7.0-openjdk-headless%1
 
 %global java_devel_rpo() %{expand:
 # Require base package.
-Requires:         %{name}%1 = %{epoch}:%{version}-%{release}
-OrderWithRequires: %{name}-headless%1 = %{epoch}:%{version}-%{release}
+Requires:         %{name}%1%{?_isa} = %{epoch}:%{version}-%{release}
+OrderWithRequires: %{name}-headless%1%{?_isa} = %{epoch}:%{version}-%{release}
 # Post requires alternatives to install tool alternatives.
 Requires(post):   %{_sbindir}/alternatives
 # in version 1.7 and higher for --family switch
@@ -761,14 +753,14 @@ Obsoletes: java-1.5.0-gcj-devel%1
 
 
 %global java_demo_rpo() %{expand:
-Requires: %{name}%1 = %{epoch}:%{version}-%{release}
-OrderWithRequires: %{name}-headless%1 = %{epoch}:%{version}-%{release}
+Requires: %{name}%1%{?_isa} = %{epoch}:%{version}-%{release}
+OrderWithRequires: %{name}-headless%1%{?_isa} = %{epoch}:%{version}-%{release}
 
 Obsoletes: java-1.7.0-openjdk-demo%1
 }
 
 %global java_javadoc_rpo() %{expand:
-OrderWithRequires: %{name}-headless%1 = %{epoch}:%{version}-%{release}
+OrderWithRequires: %{name}-headless%1%{?_isa} = %{epoch}:%{version}-%{release}
 # Post requires alternatives to install javadoc alternative.
 Requires(post):   %{_sbindir}/alternatives
 # in version 1.7 and higher for --family switch
@@ -787,15 +779,15 @@ Obsoletes: java-1.7.0-openjdk-javadoc%1
 }
 
 %global java_src_rpo() %{expand:
-Requires: %{name}-headless%1 = %{epoch}:%{version}-%{release}
+Requires: %{name}-headless%1%{?_isa} = %{epoch}:%{version}-%{release}
 
 Obsoletes: java-1.7.0-openjdk-src%1
 }
 
 %global java_accessibility_rpo() %{expand:
-Requires: java-atk-wrapper
-Requires: %{name}%1 = %{epoch}:%{version}-%{release}
-OrderWithRequires: %{name}-headless%1 = %{epoch}:%{version}-%{release}
+Requires: java-atk-wrapper%{?_isa}
+Requires: %{name}%1%{?_isa} = %{epoch}:%{version}-%{release}
+OrderWithRequires: %{name}-headless%1%{?_isa} = %{epoch}:%{version}-%{release}
 
 Obsoletes: java-1.7.0-openjdk-accessibility%1
 }
@@ -805,7 +797,7 @@ Obsoletes: java-1.7.0-openjdk-accessibility%1
 
 Name:    java-%{javaver}-%{origin}-aarch32
 Version: %{javaver}.%{updatever}
-Release: 3.%{buildver}%{?dist}
+Release: 1.%{buildver}%{?dist}
 # java-1.5.0-ibm from jpackage.org set Epoch to 1 for unknown reasons,
 # and this change was brought into RHEL-4.  java-1.5.0-ibm packages
 # also included the epoch in their virtual provides.  This created a
@@ -834,14 +826,14 @@ Source2:  README.src
 # They are based on code contained in the IcedTea7 project.
 
 # Systemtap tapsets. Zipped up to keep it small.
-Source8: systemtap-tapset-3.1.0.tar.xz
+Source8: systemtap-tapset-3.4.0pre01.tar.xz
 
 # Desktop files. Adapated from IcedTea.
 Source9: jconsole.desktop.in
 Source10: policytool.desktop.in
 
 # nss configuration file
-Source11: nss.cfg
+Source11: nss.cfg.in
 
 # Removed libraries that we link instead
 Source12: java-1.8.0-openjdk-remove-intree-libraries.sh
@@ -895,7 +887,25 @@ Patch509: rh1176206-root.patch
 Patch523: pr2974-rh1337583.patch
 # PR3083, RH1346460: Regression in SSL debug output without an ECC provider
 Patch528: pr3083-rh1346460.patch
+# Patches 204 and 205 stop the build adding .gnu_debuglink sections to unstripped files
+Patch204: hotspot-remove-debuglink.patch
+Patch205: dont-add-unnecessary-debug-links.patch
+# Enable debug information for assembly code files
+Patch206: hotspot-assembler-debuginfo.patch
 
+# Arch-specific upstreamable patches
+# PR2415: JVM -Xmx requirement is too high on s390
+#Patch100: %{name}-s390-java-opts.patch
+# Type fixing for s390
+#Patch102: %{name}-size_t.patch
+# Use "%z" for size_t on s390 as size_t != intptr_t
+#Patch103: s390-size_t_format_flags.patch
+
+# Patches which need backporting to 8u
+# S8073139, RH1191652; fix name of ppc64le architecture
+#Patch601: %{name}-rh1191652-root.patch
+#Patch602: %{name}-rh1191652-jdk.patch
+#Patch603: %{name}-rh1191652-hotspot-aarch64.patch
 # Include all sources in src.zip
 Patch7: include-all-srcs.patch
 # 8035341: Allow using a system installed libpng
@@ -912,14 +922,37 @@ Patch507: pr2842-02.patch
 Patch400: 8154313.patch
 # S6260348, PR3066: GTK+ L&F JTextComponent not respecting desktop caret blink rate
 Patch526: 6260348-pr3066.patch
+# 8061305, PR3335, RH1423421: Javadoc crashes when method name ends with "Property"
+Patch538: 8061305-pr3335-rh1423421.patch
+
+# Patches upstream and appearing in 8u131
+# 6515172, PR3346: Runtime.availableProcessors() ignores Linux taskset command
+#Patch542: 6515172-pr3346.patch
+
+# Patches upstream and appearing in 8u152
+# 8153711, PR3313, RH1284948: [REDO] JDWP: Memory Leak: GlobalRefs never deleted when processing invokeMethod command
+Patch535: 8153711-pr3313-rh1284948.patch
+# 8144566, PR3352: Custom HostnameVerifier disables SNI extension
+Patch544: 8144566-pr3352.patch
+# 8155049, PR3352: New tests from 8144566 fail with "No expected Server Name Indication"
+Patch545: 8155049-pr3352.patch
+# 8162384, PR3122, RH1358661: Performance regression: bimorphic inlining may be bypassed by type speculation
+Patch532: 8162384-pr3122-rh1358661.patch
+# 8165231, RH1437545: java.nio.Bits.unaligned() doesn't return true on ppc
+Patch546: 8165231-rh1437545.patch
+# 8173941, PR3326: SA does not work if executable is DSO
+Patch547: 8173941-pr3326.patch
+# 8174164, PR3334, RH1417266: SafePointNode::_replaced_nodes breaks with irreducible loops"
+Patch537: 8174164-pr3334-rh1417266.patch
+# 8174729, PR3336, RH1420518: Race Condition in java.lang.reflect.WeakCache
+Patch548: 8174729-pr3336-rh1420518.patch
+# 8175097, PR3334, RH1417266: [TESTBUG] 8174164 fix missed the test
+Patch549: 8175097-pr3334-rh1417266.patch
 
 # Patches ineligible for 8u
 # 8043805: Allow using a system-installed libjpeg
 Patch201: system-libjpeg.patch
-# Pathces 204-206 are serving for better check of debug symbols in native liraries
-Patch204: hotspot-remove-debuglink.patch
-Patch205: dont-add-unnecessary-debug-links.patch
-Patch206: hotspot-assembler-debuginfo.patch
+# custom securities
 Patch207: PR3183.patch
 
 # Local fixes
@@ -927,11 +960,12 @@ Patch207: PR3183.patch
 Patch525: pr1834-rh1022017.patch
 # RH1367357: lcms2: Out-of-bounds read in Type_MLU_Read()
 Patch533: rh1367357.patch
+# Turn on AssumeMP by default on RHEL systems
+#Patch534: always_assumemp.patch
+# PR2888: OpenJDK should check for system cacerts database (e.g. /etc/pki/java/cacerts)
+Patch539: pr2888.patch
 
 # Non-OpenJDK fixes
-
-# AArch32 upstream changes
-
 
 BuildRequires: autoconf
 BuildRequires: automake
@@ -971,8 +1005,6 @@ BuildRequires: gcc >= 4.8.3-8
 # Build requirements for SunEC system NSS support
 BuildRequires: nss-softokn-freebl-devel >= 3.16.1
 
-# cacerts build requirement.
-BuildRequires: openssl
 %if %{with_systemtap}
 BuildRequires: systemtap-sdt-devel
 %endif
@@ -1197,6 +1229,16 @@ if [ $prioritylength -ne 7 ] ; then
 fi
 # For old patches
 ln -s openjdk jdk8
+%if %{use_shenandoah_hotspot}
+# On Shenandoah-supported architectures, replace HotSpot with
+# the Shenandoah version
+pushd openjdk
+tar -xf %{SOURCE999}
+rm -rf hotspot
+mv openjdk/hotspot .
+rm -rf openjdk
+popd
+%endif
 
 cp %{SOURCE2} .
 
@@ -1212,9 +1254,12 @@ cp %{SOURCE101} openjdk/common/autoconf/build-aux/
 # Remove libraries that are linked
 sh %{SOURCE12}
 
+# System library fixes
 %patch201
 %patch202
 %patch203
+
+# Debugging fixes
 %patch204
 %patch205
 %patch206
@@ -1225,6 +1270,20 @@ sh %{SOURCE12}
 %patch5
 %patch7
 
+# s390 build fixes
+#%patch100
+#%patch102
+#%patch103
+
+# ppc64le fixes
+
+#%patch603
+#%patch601
+#%patch602
+
+# Zero fixes.
+
+# Upstreamable fixes
 %patch502
 %patch504
 %patch506
@@ -1241,12 +1300,29 @@ sh %{SOURCE12}
 %patch518
 %patch400
 %patch523
-%patch525
+%patch526
 %patch528
+%patch532
+%patch535
+%patch537
+%patch538
+#%patch542
+%patch544
+%patch545
+%patch546
+%patch547
+%patch548
+%patch549
+
+# RPM-only fixes
+%patch525
 %patch533
+%patch539
 
-# AArch32 upstream patches
-
+# RHEL-only patches
+%if 0%{?rhel}
+%patch534
+%endif
 
 # Extract systemtap tapsets
 %if %{with_systemtap}
@@ -1287,8 +1363,8 @@ for file in %{SOURCE9} %{SOURCE10} ; do
 done
 done
 
-# this is check which controls, that latest java.security is included in post(_headless)
-%{check_sum_presented_in_spec openjdk/jdk/src/share/lib/security/java.security-linux}
+# Setup nss.cfg
+sed -e s:@NSS_LIBDIR@:%{NSS_LIBDIR}:g %{SOURCE11} > nss.cfg
 
 
 %build
@@ -1391,7 +1467,7 @@ popd >& /dev/null
 export JAVA_HOME=$(pwd)/%{buildoutputdir $suffix}/images/%{j2sdkimage}
 
 # Install nss.cfg right away as we will be using the JRE above
-install -m 644 %{SOURCE11} $JAVA_HOME/jre/lib/security/
+install -m 644 nss.cfg $JAVA_HOME/jre/lib/security/
 
 # Use system-wide tzdata
 rm $JAVA_HOME/jre/lib/tzdb.dat
@@ -1406,9 +1482,6 @@ done
 for suffix in %{rev_build_loop} ; do
 
 export JAVA_HOME=$(pwd)/%{buildoutputdir $suffix}/images/%{j2sdkimage}
-
-# check java.security in this build is also in this specfile
-%{check_sum_presented_in_spec $JAVA_HOME/jre/lib/security/java.security}
 
 # Check unlimited policy has been used
 $JAVA_HOME/bin/javac -d . %{SOURCE13}
@@ -1429,7 +1502,7 @@ do
     # Test for .debug_* sections in the shared object. This is the  main test.
     # Stripped objects will not contain these.
     eu-readelf -S "$lib" | grep "] .debug_"
-    test $(eu-readelf -S "$lib" | egrep "\]\ .debug_(info|abbrev)" | wc --lines) == 2
+    test $(eu-readelf -S "$lib" | grep -E "\]\ .debug_(info|abbrev)" | wc --lines) == 2
 
     # Test FILE symbols. These will most likely be removed by anyting that
     # manipulates symbol tables because it's generally useless. So a nice test
@@ -1440,14 +1513,14 @@ do
     do
      # We expect to see .cpp files, except for architectures like aarch64 and
      # s390 where we expect .o and .oS files
-      echo "$line" | egrep "ABS ((.*/)?[-_a-zA-Z0-9]+\.(c|cc|cpp|cxx|o|oS))?$"
+      echo "$line" | grep -E "ABS ((.*/)?[-_a-zA-Z0-9]+\.(c|cc|cpp|cxx|o|oS))?$"
     done
     IFS="$old_IFS"
 
     # If this is the JVM, look for javaCalls.(cpp|o) in FILEs, for extra sanity checking.
     if [ "`basename $lib`" = "libjvm.so" ]; then
       eu-readelf -s "$lib" | \
-        egrep "00000000      0 FILE    LOCAL  DEFAULT      ABS javaCalls.(cpp|o)$"
+        grep -E "00000000      0 FILE    LOCAL  DEFAULT      ABS javaCalls.(cpp|o)$"
     fi
 
     # Test that there are no .gnu_debuglink sections pointing to another
@@ -1491,7 +1564,6 @@ $JAVA_HOME/bin/javap -l java.nio.ByteBuffer | grep LocalVariableTable
 done
 
 %install
-rm -rf $RPM_BUILD_ROOT
 STRIP_KEEP_SYMTAB=libjvm*
 
 for suffix in %{build_loop} ; do
@@ -1570,13 +1642,8 @@ popd
   popd
 %endif
 
-  # Install cacerts symlink.
+  # Remove empty cacerts database.
   rm -f $RPM_BUILD_ROOT%{_jvmdir}/%{jredir $suffix}/lib/security/cacerts
-  pushd $RPM_BUILD_ROOT%{_jvmdir}/%{jredir $suffix}/lib/security
-    RELATIVE=$(%{abs2rel} %{_sysconfdir}/pki/java \
-      %{_jvmdir}/%{jredir $suffix}/lib/security)
-    ln -sf $RELATIVE/cacerts .
-  popd
 
   # Install extension symlinks.
   install -d -m 755 $RPM_BUILD_ROOT%{jvmjardir $suffix}
@@ -1788,7 +1855,7 @@ else
   end
 end
 -- run contetn of included file with fake args
-arg = {"--currentjvm", "%{uniquesuffix %{nil}}", "--jvmdir", "%{_jvmdir %{nil}}", "--origname", "%{name}", "--origjavaver", "%{javaver}", "--arch", "%{_arch}"}
+arg = {"--currentjvm", "%{uniquesuffix %{nil}}", "--jvmdir", "%{_jvmdir %{nil}}", "--origname", "%{name}", "--origjavaver", "%{javaver}", "--arch", "%{_arch}", "--temp", "%{rpm_state_dir}/%{name}.%{_arch}"}
 require "copy_jdk_configs.lua"
 
 %post 
@@ -1928,6 +1995,14 @@ require "copy_jdk_configs.lua"
 %endif
 
 %changelog
+* Sat Apr 29 2017 Alex Kashchenko <akashche@redhat.com> - 1:1.8.0.131-1.170420
+- update sources to 8u131
+- sync with mainline package
+
+* Wed Apr 12 2017 Alex Kashchenko <akashche@redhat.com> - 1:1.8.0.121-4.170210
+- sync with mainline package
+- add 8175234-aarch32 upstream patch
+
 * Tue Feb 28 2017 Alex Kashchenko <akashche@redhat.com> - 1:1.8.0.121-3.170210
 - rebuild because of NSS
 
