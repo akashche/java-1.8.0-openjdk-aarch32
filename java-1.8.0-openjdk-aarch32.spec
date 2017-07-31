@@ -1488,7 +1488,7 @@ bash ../../configure \
     --with-milestone="fcs" \
     --with-update-version=%{updatever} \
     --with-build-number=%{buildver} \
-    --with-boot-jdk=/usr/lib/jvm/java-openjdk \
+    --with-boot-jdk=$(echo /usr/lib/jvm/java-1.8.0-openjdk-aarch32-*) \
     --with-debug-level=$debugbuild \
     --enable-unlimited-crypto \
     --enable-system-nss \
@@ -2125,6 +2125,9 @@ require "copy_jdk_configs.lua"
 %endif
 
 %changelog
+* Mon Jul 31 2017 Alex Kashchenko <akashche@redhat.com> - 1:1.8.0.141-2.170721
+- switch boot jdk to aarch32
+
 * Mon Jul 24 2017 Alex Kashchenko <akashche@redhat.com> - 1:1.8.0.141-1.170721
 - update sources to 8u141
 - sync with mainline package
