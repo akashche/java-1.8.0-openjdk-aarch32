@@ -211,7 +211,7 @@
 # note, following three variables are sedded from update_sources if used correctly. Hardcode them rather there.
 %global project         aarch32-port
 %global repo            jdk8u
-%global revision        jdk8u141-b15-aarch32-170721
+%global revision        jdk8u144-b01-aarch32-170809
 # eg # jdk8u60-b27 -> jdk8u60 or # aarch64-jdk8u60-b27 -> aarch64-jdk8u60  (dont forget spec escape % by %%)
 %global whole_update    %(VERSION=%{revision}; echo ${VERSION%%-*})
 # eg  jdk8u60 -> 60 or aarch64-jdk8u60 -> 60
@@ -2125,6 +2125,9 @@ require "copy_jdk_configs.lua"
 %endif
 
 %changelog
+* Thu Sep  7 2017 Alex Kashchenko <akashche@redhat.com> - 1:1.8.0.144-1.170809
+- update sources to 8u144
+
 * Mon Jul 31 2017 Alex Kashchenko <akashche@redhat.com> - 1:1.8.0.141-2.170721
 - switch boot jdk to aarch32
 
