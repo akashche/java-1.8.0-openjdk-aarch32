@@ -985,7 +985,7 @@ Obsoletes: java-1.7.0-openjdk-accessibility%{?1}
 
 Name:    java-%{javaver}-%{origin}-aarch32
 Version: %{javaver}.%{updatever}
-Release: 1.%{buildver}%{?dist}
+Release: 2.%{buildver}%{?dist}
 # java-1.5.0-ibm from jpackage.org set Epoch to 1 for unknown reasons,
 # and this change was brought into RHEL-4.  java-1.5.0-ibm packages
 # also included the epoch in their virtual provides.  This created a
@@ -2239,6 +2239,9 @@ require "copy_jdk_configs.lua"
 %endif
 
 %changelog
+* Fri Sep 15 2017 Alex Kashchenko <akashche@redhat.com> - 1:1.8.0.144-2.170809
+- bump release to 2 to fix dist.upgradepath
+
 * Wed Sep 6 2017 Alex Kashchenko <akashche@redhat.com> - 1:1.8.0.144-1.170809
 - mainline package merge
 - provides disabled
