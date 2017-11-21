@@ -211,7 +211,7 @@
 # note, following three variables are sedded from update_sources if used correctly. Hardcode them rather there.
 %global project         aarch32-port
 %global repo            jdk8u
-%global revision        jdk8u144-b01-aarch32-170809
+%global revision        jdk8u152-b17-aarch32-171102
 # eg # jdk8u60-b27 -> jdk8u60 or # aarch64-jdk8u60-b27 -> aarch64-jdk8u60  (dont forget spec escape % by %%)
 %global whole_update    %(VERSION=%{revision}; echo ${VERSION%%-*})
 # eg  jdk8u60 -> 60 or aarch64-jdk8u60 -> 60
@@ -567,8 +567,10 @@ exit 0
 %{_jvmdir}/%{jredir -- %{?1}}/bin/servertool
 %{_jvmdir}/%{jredir -- %{?1}}/bin/tnameserv
 %{_jvmdir}/%{jredir -- %{?1}}/bin/unpack200
-%config(noreplace) %{_jvmdir}/%{jredir -- %{?1}}/lib/security/US_export_policy.jar
-%config(noreplace) %{_jvmdir}/%{jredir -- %{?1}}/lib/security/local_policy.jar
+%config(noreplace) %{_jvmdir}/%{jredir -- %{?1}}/lib/security/policy/unlimited/US_export_policy.jar
+%config(noreplace) %{_jvmdir}/%{jredir -- %{?1}}/lib/security/policy/unlimited/local_policy.jar
+%config(noreplace) %{_jvmdir}/%{jredir -- %{?1}}/lib/security/policy/limited/US_export_policy.jar
+%config(noreplace) %{_jvmdir}/%{jredir -- %{?1}}/lib/security/policy/limited/local_policy.jar
 %config(noreplace) %{_jvmdir}/%{jredir -- %{?1}}/lib/security/java.policy
 %config(noreplace) %{_jvmdir}/%{jredir -- %{?1}}/lib/security/java.security
 %config(noreplace) %{_jvmdir}/%{jredir -- %{?1}}/lib/security/blacklisted.certs
@@ -867,7 +869,7 @@ Requires: lksctp-tools%{?_isa}
 Requires: nss%{?_isa} %{NSS_BUILDTIME_VERSION}
 Requires: nss-softokn%{?_isa} %{NSSSOFTOKN_BUILDTIME_VERSION}
 # tool to copy jdk's configs - should be Recommends only, but then only dnf/yum eforce it, not rpm transaction and so no configs are persisted when pure rpm -u is run. I t may be consiedered as regression
-Requires:	copy-jdk-configs >= 2.2
+Requires:	copy-jdk-configs >= 3.3
 OrderWithRequires: copy-jdk-configs
 # Post requires alternatives to install tool alternatives.
 Requires(post):   %{_sbindir}/alternatives
@@ -985,7 +987,7 @@ Obsoletes: java-1.7.0-openjdk-accessibility%{?1}
 
 Name:    java-%{javaver}-%{origin}-aarch32
 Version: %{javaver}.%{updatever}
-Release: 2.%{buildver}%{?dist}
+Release: 1.%{buildver}%{?dist}
 # java-1.5.0-ibm from jpackage.org set Epoch to 1 for unknown reasons,
 # and this change was brought into RHEL-4.  java-1.5.0-ibm packages
 # also included the epoch in their virtual provides.  This created a
@@ -1067,12 +1069,14 @@ Patch512: no_strict_overflow.patch
 # PR2815: Race condition in SunEC provider with system NSS
 # PR2899: Don't use WithSeed versions of NSS functions as they don't fully process the seed
 # PR2934: SunEC provider throwing KeyException with current NSS
+# PR3479, RH1486025: ECC and NSS JVM crash
 Patch513: pr1983-jdk.patch
 Patch514: pr1983-root.patch
 Patch515: pr2127.patch
 Patch516: pr2815.patch
 Patch517: pr2899.patch
 Patch518: pr2934.patch
+Patch519: pr3479-rh1486025.patch
 # S8150954, RH1176206, PR2866: Taking screenshots on x11 composite desktop produces wrong result
 # In progress: http://mail.openjdk.java.net/pipermail/awt-dev/2016-March/010742.html
 Patch508: rh1176206-jdk.patch
@@ -1086,20 +1090,22 @@ Patch204: hotspot-remove-debuglink.patch
 Patch205: dont-add-unnecessary-debug-links.patch
 # Enable debug information for assembly code files
 Patch206: hotspot-assembler-debuginfo.patch
+# 8188030, PR3459, RH1484079: AWT java apps fail to start when some minimal fonts are present
+Patch560: 8188030-pr3459-rh1484079.patch
 
 # Arch-specific upstreamable patches
 # PR2415: JVM -Xmx requirement is too high on s390
-#Patch100: java-1.8.0-openjk-s390-java-opts.patch
+#Patch100: %{name}-s390-java-opts.patch
 # Type fixing for s390
-#Patch102: java-1.8.0-openjk-size_t.patch
+#Patch102: %{name}-size_t.patch
 # Use "%z" for size_t on s390 as size_t != intptr_t
 #Patch103: s390-size_t_format_flags.patch
 
 # Patches which need backporting to 8u
 # S8073139, RH1191652; fix name of ppc64le architecture
-#Patch601: java-1.8.0-openjk-rh1191652-root.patch
-#Patch602: java-1.8.0-openjk-rh1191652-jdk.patch
-#Patch603: java-1.8.0-openjk-rh1191652-hotspot-aarch64.patch
+#Patch601: %{name}-rh1191652-root.patch
+#Patch602: %{name}-rh1191652-jdk.patch
+#Patch603: %{name}-rh1191652-hotspot-aarch64.patch
 # Include all sources in src.zip
 Patch7: include-all-srcs.patch
 # 8035341: Allow using a system installed libpng
@@ -1118,41 +1124,54 @@ Patch400: 8154313.patch
 Patch526: 6260348-pr3066.patch
 # 8061305, PR3335, RH1423421: Javadoc crashes when method name ends with "Property"
 Patch538: 8061305-pr3335-rh1423421.patch
-# 8181055, PR3394, RH1448880: PPC64: "mbind: Invalid argument" still seen after 8175813
-#Patch551: 8181055-pr3394-rh1448880.patch
-# 8181419, PR3413, RH1463144: Race in jdwp invoker handling may lead to crashes or invalid results
-Patch553: 8181419-pr3413-rh1463144.patch
+
+# Patches upstream and appearing in 8u151
+# 8075484, PR3473, RH1490713: SocketInputStream.socketRead0 can hang even with soTimeout set
+#Patch561: 8075484-pr3473-rh1490713.patch
 
 # Patches upstream and appearing in 8u152
 # 8153711, PR3313, RH1284948: [REDO] JDWP: Memory Leak: GlobalRefs never deleted when processing invokeMethod command
-Patch535: 8153711-pr3313-rh1284948.patch
+#Patch535: 8153711-pr3313-rh1284948.patch
 # 8162384, PR3122, RH1358661: Performance regression: bimorphic inlining may be bypassed by type speculation
-Patch532: 8162384-pr3122-rh1358661.patch
+#Patch532: 8162384-pr3122-rh1358661.patch
 # 8173941, PR3326: SA does not work if executable is DSO
-Patch547: 8173941-pr3326.patch
+#Patch547: 8173941-pr3326.patch
 # 8175813, PR3394, RH1448880: PPC64: "mbind: Invalid argument" when -XX:+UseNUMA is used
 #Patch550: 8175813-pr3394-rh1448880.patch
-# 8179084, PR3409, RH1455694: HotSpot VM fails to start when AggressiveHeap is set
-Patch552: 8179084-pr3409-rh1455694.patch
 # 8175887, PR3415: C1 value numbering handling of Unsafe.get*Volatile is incorrect
-Patch554: 8175887-pr3415.patch
+#Patch554: 8175887-pr3415.patch
 
 # Patches upstream and appearing in 8u161
 # 8164293, PR3412, RH1459641: HotSpot leaking memory in long-running requests
-Patch555: 8164293-pr3412-rh1459641.patch
+#Patch555: 8164293-pr3412-rh1459641.patch
+ 
+# Patches upstream and appearing in 8u162
+# 8181055, PR3394, RH1448880: PPC64: "mbind: Invalid argument" still seen after 8175813
+# Patch551: 8181055-pr3394-rh1448880.patch
+# 8181419, PR3413, RH1463144: Race in jdwp invoker handling may lead to crashes or invalid results
+# Patch553: 8181419-pr3413-rh1463144.patch
+# 8145913, PR3466, RH1498309: PPC64: add Montgomery multiply intrinsic
+# Patch556: 8145913-pr3466-rh1498309.patch
+# 8168318, PR3466, RH1498320: PPC64: Use cmpldi instead of li/cmpld
+# Patch557: 8168318-pr3466-rh1498320.patch
+# 8170328, PR3466, RH1498321: PPC64: Use andis instead of lis/and
+# Patch558: 8170328-pr3466-rh1498321.patch
+# 8181810, PR3466, RH1498319: PPC64: Leverage extrdi for bitfield extract
+# Patch559: 8181810-pr3466-rh1498319.patch
 
 # Patches ineligible for 8u
 # 8043805: Allow using a system-installed libjpeg
 Patch201: system-libjpeg.patch
 # custom securities
 Patch207: PR3183.patch
+# ustreamed aarch64 fixes
 #Patch208: aarch64BuildFailure.patch
+#Patch209: 8035496-hotspot.patch
+#Patch210: suse_linuxfilestore.patch
 
 # Local fixes
 # PR1834, RH1022017: Reduce curves reported by SSL to those in NSS
 Patch525: pr1834-rh1022017.patch
-# RH1367357: lcms2: Out-of-bounds read in Type_MLU_Read()
-Patch533: rh1367357.patch
 # Turn on AssumeMP by default on RHEL systems
 #Patch534: always_assumemp.patch
 # PR2888: OpenJDK should check for system cacerts database (e.g. /etc/pki/java/cacerts)
@@ -1500,6 +1519,8 @@ sh %{SOURCE12}
 %patch206
 %patch207
 #%patch208
+#%patch209
+#%patch210
 
 %patch1
 %patch3
@@ -1534,34 +1555,41 @@ sh %{SOURCE12}
 %patch516
 %patch517
 %patch518
+%patch519
 %patch400
 %patch523
 %patch526
 %patch528
-%patch532
-%patch535
+#%patch532
+#%patch535
 %patch538
-%patch547
+#%patch547
 #%patch550
 #%patch551
-%patch552
-%patch553
-%patch555
+#%patch553
+#%patch555
+%patch560
+#%patch561
+
+# PPC64 updates
+#%patch556
+#%patch557
+#%patch558
+#%patch559
 
 # RPM-only fixes
 %patch525
-%patch533
 %patch539
 
 # RHEL-only patches
-%if 0%{?rhel}
+%if ! 0%{?fedora} && 0%{?rhel} <= 7
 %patch534
 %endif
 
 # 8175887 was added to the Shenandoah HotSpot ahead of time
 %if %{use_shenandoah_hotspot}
 %else
-%patch554
+#%patch554
 %endif
 
 %patch1000
@@ -2239,6 +2267,10 @@ require "copy_jdk_configs.lua"
 %endif
 
 %changelog
+* Wed Nov 15 2017 Alex Kashchenko <akashche@redhat.com> - 1:1.8.0.152-1.171102
+- update sources to 8u152
+- sync with mainline package
+
 * Fri Sep 15 2017 Alex Kashchenko <akashche@redhat.com> - 1:1.8.0.144-2.170809
 - bump release to 2 to fix dist.upgradepath
 
