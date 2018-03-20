@@ -211,7 +211,7 @@
 # note, following three variables are sedded from update_sources if used correctly. Hardcode them rather there.
 %global project         aarch32-port
 %global repo            jdk8u
-%global revision        jdk8u152-b17-aarch32-171102
+%global revision        jdk8u161-b12-aarch32-180220
 # eg # jdk8u60-b27 -> jdk8u60 or # aarch64-jdk8u60-b27 -> aarch64-jdk8u60  (dont forget spec escape % by %%)
 %global whole_update    %(VERSION=%{revision}; echo ${VERSION%%-*})
 # eg  jdk8u60 -> 60 or aarch64-jdk8u60 -> 60
@@ -466,7 +466,7 @@ for X in %{origin} %{javaver} ; do
     --install %{_jvmdir}/java-"$X" java_sdk_"$X" %{_jvmdir}/%{sdkdir -- %{?1}} $PRIORITY  --family %{name}.%{_arch}
 done
 
-update-alternatives --install %{_jvmdir}/java-%{javaver}-%{origin} java_sdk_%{javaver}_%{origin} %{_jvmdir}/%{sdkdir -- %{?1}} $PRIORITY  --family %{name}.%{_arch} \\
+update-alternatives --install %{_jvmdir}/java-%{javaver}-%{origin} java_sdk_%{javaver}_%{origin} %{_jvmdir}/%{sdkdir -- %{?1}} $PRIORITY  --family %{name}.%{_arch}
 
 update-desktop-database %{_datadir}/applications &> /dev/null || :
 /bin/touch --no-create %{_datadir}/icons/hicolor &>/dev/null || :
@@ -546,6 +546,8 @@ exit 0
 
 %define files_jre_headless() %{expand:
 %defattr(-,root,root,-)
+%dir %{_sysconfdir}/.java/.systemPrefs
+%dir %{_sysconfdir}/.java
 %license %{buildoutputdir -- %{?1}}/images/%{j2sdkimage}/jre/ASSEMBLY_EXCEPTION
 %license %{buildoutputdir -- %{?1}}/images/%{j2sdkimage}/jre/LICENSE
 %license %{buildoutputdir -- %{?1}}/images/%{j2sdkimage}/jre/THIRD_PARTY_README
@@ -987,7 +989,7 @@ Obsoletes: java-1.7.0-openjdk-accessibility%{?1}
 
 Name:    java-%{javaver}-%{origin}-aarch32
 Version: %{javaver}.%{updatever}
-Release: 2.%{buildver}%{?dist}
+Release: 1.%{buildver}%{?dist}
 # java-1.5.0-ibm from jpackage.org set Epoch to 1 for unknown reasons,
 # and this change was brought into RHEL-4.  java-1.5.0-ibm packages
 # also included the epoch in their virtual provides.  This created a
@@ -1092,20 +1094,22 @@ Patch205: dont-add-unnecessary-debug-links.patch
 Patch206: hotspot-assembler-debuginfo.patch
 # 8188030, PR3459, RH1484079: AWT java apps fail to start when some minimal fonts are present
 Patch560: 8188030-pr3459-rh1484079.patch
+# 8196218, RH1538767: libfontmanager.so needs to link against headless awt library
+Patch561: rhbz_1538767_fix_linking.patch
 
 # Arch-specific upstreamable patches
 # PR2415: JVM -Xmx requirement is too high on s390
-#Patch100: %{name}-s390-java-opts.patch
+#Patch100: {name}-s390-java-opts.patch
 # Type fixing for s390
-#Patch102: %{name}-size_t.patch
+#Patch102: {name}-size_t.patch
 # Use "%z" for size_t on s390 as size_t != intptr_t
 #Patch103: s390-size_t_format_flags.patch
 
 # Patches which need backporting to 8u
 # S8073139, RH1191652; fix name of ppc64le architecture
-#Patch601: %{name}-rh1191652-root.patch
-#Patch602: %{name}-rh1191652-jdk.patch
-#Patch603: %{name}-rh1191652-hotspot-aarch64.patch
+#Patch601: {name}-rh1191652-root.patch
+#Patch602: {name}-rh1191652-jdk.patch
+#Patch603: {name}-rh1191652-hotspot-aarch64.patch
 # Include all sources in src.zip
 Patch7: include-all-srcs.patch
 # 8035341: Allow using a system installed libpng
@@ -1125,39 +1129,32 @@ Patch526: 6260348-pr3066.patch
 # 8061305, PR3335, RH1423421: Javadoc crashes when method name ends with "Property"
 Patch538: 8061305-pr3335-rh1423421.patch
 
-# Patches upstream and appearing in 8u151
-# 8075484, PR3473, RH1490713: SocketInputStream.socketRead0 can hang even with soTimeout set
-#Patch561: 8075484-pr3473-rh1490713.patch
-
-# Patches upstream and appearing in 8u152
-# 8153711, PR3313, RH1284948: [REDO] JDWP: Memory Leak: GlobalRefs never deleted when processing invokeMethod command
-#Patch535: 8153711-pr3313-rh1284948.patch
-# 8162384, PR3122, RH1358661: Performance regression: bimorphic inlining may be bypassed by type speculation
-#Patch532: 8162384-pr3122-rh1358661.patch
-# 8173941, PR3326: SA does not work if executable is DSO
-#Patch547: 8173941-pr3326.patch
-# 8175813, PR3394, RH1448880: PPC64: "mbind: Invalid argument" when -XX:+UseNUMA is used
-#Patch550: 8175813-pr3394-rh1448880.patch
-# 8175887, PR3415: C1 value numbering handling of Unsafe.get*Volatile is incorrect
-#Patch554: 8175887-pr3415.patch
-
-# Patches upstream and appearing in 8u161
-# 8164293, PR3412, RH1459641: HotSpot leaking memory in long-running requests
-#Patch555: 8164293-pr3412-rh1459641.patch
- 
 # Patches upstream and appearing in 8u162
 # 8181055, PR3394, RH1448880: PPC64: "mbind: Invalid argument" still seen after 8175813
-# Patch551: 8181055-pr3394-rh1448880.patch
+#Patch551: 8181055-pr3394-rh1448880.patch
 # 8181419, PR3413, RH1463144: Race in jdwp invoker handling may lead to crashes or invalid results
-# Patch553: 8181419-pr3413-rh1463144.patch
+#Patch553: 8181419-pr3413-rh1463144.patch
 # 8145913, PR3466, RH1498309: PPC64: add Montgomery multiply intrinsic
-# Patch556: 8145913-pr3466-rh1498309.patch
+#Patch556: 8145913-pr3466-rh1498309.patch
 # 8168318, PR3466, RH1498320: PPC64: Use cmpldi instead of li/cmpld
-# Patch557: 8168318-pr3466-rh1498320.patch
+#Patch557: 8168318-pr3466-rh1498320.patch
 # 8170328, PR3466, RH1498321: PPC64: Use andis instead of lis/and
-# Patch558: 8170328-pr3466-rh1498321.patch
+#Patch558: 8170328-pr3466-rh1498321.patch
 # 8181810, PR3466, RH1498319: PPC64: Leverage extrdi for bitfield extract
-# Patch559: 8181810-pr3466-rh1498319.patch
+#Patch559: 8181810-pr3466-rh1498319.patch
+
+# Aarch64 build fixes after January 2018 CPU
+#
+# JDK-8195685 AArch64 cannot build with JDK-8174962 (already included in source tarball)
+# JDK-8196136 AArch64: Correct register use in patch for JDK-8195685
+# JDK-8195859 AArch64: vtableStubs gtest fails after 8174962
+# JDK-8196221 AArch64: Mistake in committed patch for JDK-8195859
+#Patch570: JDK-8196136-correct-register-use-8195685.patch
+#Patch571: JDK-8195859-vtableStubs-gtest-fails-after-8174962.patch
+#Patch572: JDK-8196221-mistake-in-8195859.patch
+
+#Patch573: rhbz_1540242.patch
+#Patch574: rhbz_1540242_2.patch
 
 # Patches ineligible for 8u
 # 8043805: Allow using a system-installed libjpeg
@@ -1179,6 +1176,9 @@ Patch539: pr2888.patch
 
 # Non-OpenJDK fixes
 Patch1000: enableCommentedOutSystemNss.patch
+
+# AArch32 fixes
+Patch1100: aarch32-8174962.patch
 
 BuildRequires: autoconf
 BuildRequires: automake
@@ -1560,22 +1560,30 @@ sh %{SOURCE12}
 %patch523
 %patch526
 %patch528
-#%patch532
-#%patch535
 %patch538
-#%patch547
-#%patch550
 #%patch551
 #%patch553
-#%patch555
 %patch560
-#%patch561
+pushd openjdk/jdk
+%patch561 -p1
+popd
 
 # PPC64 updates
 #%patch556
 #%patch557
 #%patch558
 #%patch559
+
+#pushd openjdk/hotspot
+# Aarch64 build fixes after January 2018 CPU
+#%patch570 -p1
+#%patch571 -p1
+#%patch572 -p1
+
+# Zero/AArch64 fix for RHBZ#1540242
+#%patch573 -p1
+#%patch574 -p1
+#popd
 
 # RPM-only fixes
 %patch525
@@ -1586,13 +1594,10 @@ sh %{SOURCE12}
 %patch534
 %endif
 
-# 8175887 was added to the Shenandoah HotSpot ahead of time
-%if %{use_shenandoah_hotspot}
-%else
-#%patch554
-%endif
-
 %patch1000
+
+# AArch32 fixes
+%patch1100
 
 # Extract systemtap tapsets
 %if %{with_systemtap}
@@ -1806,11 +1811,16 @@ do
 done
 
 # Make sure gdb can do a backtrace based on line numbers on libjvm.so
+# javaCalls.cpp:58 should map to:
+# http://hg.openjdk.java.net/jdk8u/jdk8u/hotspot/file/ff3b27e6bcc2/src/share/vm/runtime/javaCalls.cpp#l58 
+# Using line number 1 might cause build problems. See:
+# https://bugzilla.redhat.com/show_bug.cgi?id=1539664
+# https://bugzilla.redhat.com/show_bug.cgi?id=1538767
 gdb -q "$JAVA_HOME/bin/java" <<EOF | tee gdb.out
 handle SIGSEGV pass nostop noprint
 handle SIGILL pass nostop noprint
 set breakpoint pending on
-break javaCalls.cpp:1
+break javaCalls.cpp:58
 commands 1
 backtrace
 quit
@@ -2267,6 +2277,10 @@ require "copy_jdk_configs.lua"
 %endif
 
 %changelog
+* Mon Mar 12 2018 Alex Kashchenko <akashche@redhat.com> - 1:1.8.0.161-1.180220
+- update sources to 8u161
+- sync with mainline package
+
 * Wed Feb 07 2018 Fedora Release Engineering <releng@fedoraproject.org> - 1:1.8.0.152-2.171102
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_28_Mass_Rebuild
 
