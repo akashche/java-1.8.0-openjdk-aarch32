@@ -37,7 +37,7 @@
 
 # On x86_64 and AArch64, we use the Shenandoah HotSpot
 %ifarch x86_64 %{aarch64}
-%global use_shenandoah_hotspot 1
+%global use_shenandoah_hotspot 0
 %else
 %global use_shenandoah_hotspot 0
 %endif
@@ -211,7 +211,7 @@
 # note, following three variables are sedded from update_sources if used correctly. Hardcode them rather there.
 %global project         aarch32-port
 %global repo            jdk8u
-%global revision        jdk8u161-b12-aarch32-180220
+%global revision        jdk8u171-b11-aarch32-180511
 # eg # jdk8u60-b27 -> jdk8u60 or # aarch64-jdk8u60-b27 -> aarch64-jdk8u60  (dont forget spec escape % by %%)
 %global whole_update    %(VERSION=%{revision}; echo ${VERSION%%-*})
 # eg  jdk8u60 -> 60 or aarch64-jdk8u60 -> 60
@@ -861,8 +861,8 @@ Obsoletes: sinjdoc
 %define java_headless_rpo() %{expand:
 # Require /etc/pki/java/cacerts.
 Requires: ca-certificates
-# Require javapackages-tools for ownership of /usr/lib/jvm/
-Requires: javapackages-tools
+# Require javapackages-filesystem for ownership of /usr/lib/jvm/
+Requires: javapackages-filesystem
 # Require zoneinfo data provided by tzdata-java subpackage.
 Requires: tzdata-java >= 2015d
 # libsctp.so.1 is being `dlopen`ed on demand
@@ -1004,7 +1004,17 @@ Epoch:   1
 Summary: OpenJDK Runtime Environment in a preview of the OpenJDK AArch32 project
 Group:   Development/Languages
 
-License:  ASL 1.1 and ASL 2.0 and GPL+ and GPLv2 and GPLv2 with exceptions and LGPL+ and LGPLv2 and MPLv1.0 and MPLv1.1 and Public Domain and W3C
+# HotSpot code is licensed under GPLv2
+# JDK library code is licensed under GPLv2 with the Classpath exception
+# The Apache license is used in code taken from Apache projects (primarily JAXP & JAXWS)
+# DOM levels 2 & 3 and the XML digital signature schemas are licensed under the W3C Software License
+# The JSR166 concurrency code is in the public domain
+# The BSD and MIT licenses are used for a number of third-party libraries (see THIRD_PARTY_README)
+# The OpenJDK source tree includes the JPEG library (IJG), zlib & libpng (zlib), giflib and LCMS (MIT)
+# The test code includes copies of NSS under the Mozilla Public License v2.0
+# The PCSClite headers are under a BSD with advertising license
+# The elliptic curve cryptography (ECC) source code is licensed under the LGPLv2.1 or any later version
+License:  ASL 1.1 and ASL 2.0 and BSD and BSD with advertising and GPL+ and GPLv2 and GPLv2 with exceptions and IJG and LGPLv2+ and MIT and MPLv2.0 and Public Domain and W3C and zlib
 URL:      http://openjdk.java.net/
 
 # aarch64-port now contains integration forest of both aarch64 and normal jdk
@@ -1087,15 +1097,18 @@ Patch509: rh1176206-root.patch
 Patch523: pr2974-rh1337583.patch
 # PR3083, RH1346460: Regression in SSL debug output without an ECC provider
 Patch528: pr3083-rh1346460.patch
+# 8196516, RH1538767: libfontmanager.so needs to be built with LDFLAGS so as to allow
+#                     linking with unresolved symbols.
+Patch529: rhbz_1538767_fix_linking.patch
+
+# Upstreamable debugging patches
 # Patches 204 and 205 stop the build adding .gnu_debuglink sections to unstripped files
 Patch204: hotspot-remove-debuglink.patch
 Patch205: dont-add-unnecessary-debug-links.patch
 # Enable debug information for assembly code files
 Patch206: hotspot-assembler-debuginfo.patch
-# 8188030, PR3459, RH1484079: AWT java apps fail to start when some minimal fonts are present
-Patch560: 8188030-pr3459-rh1484079.patch
-# 8196218, RH1538767: libfontmanager.so needs to link against headless awt library
-Patch561: rhbz_1538767_fix_linking.patch
+# 8200556, PR3566: AArch64 port crashes on slowdebug builds
+#Patch207: 8200556-pr3566.patch
 
 # Arch-specific upstreamable patches
 # PR2415: JVM -Xmx requirement is too high on s390
@@ -1104,6 +1117,8 @@ Patch561: rhbz_1538767_fix_linking.patch
 #Patch102: {name}-size_t.patch
 # Use "%z" for size_t on s390 as size_t != intptr_t
 #Patch103: s390-size_t_format_flags.patch
+# Fix more cases of missing return statements on AArch64
+#Patch104: pr3458-rh1540242.patch
 
 # Patches which need backporting to 8u
 # S8073139, RH1191652; fix name of ppc64le architecture
@@ -1128,43 +1143,19 @@ Patch400: 8154313.patch
 Patch526: 6260348-pr3066.patch
 # 8061305, PR3335, RH1423421: Javadoc crashes when method name ends with "Property"
 Patch538: 8061305-pr3335-rh1423421.patch
-
-# Patches upstream and appearing in 8u162
-# 8181055, PR3394, RH1448880: PPC64: "mbind: Invalid argument" still seen after 8175813
-#Patch551: 8181055-pr3394-rh1448880.patch
-# 8181419, PR3413, RH1463144: Race in jdwp invoker handling may lead to crashes or invalid results
-#Patch553: 8181419-pr3413-rh1463144.patch
-# 8145913, PR3466, RH1498309: PPC64: add Montgomery multiply intrinsic
-#Patch556: 8145913-pr3466-rh1498309.patch
-# 8168318, PR3466, RH1498320: PPC64: Use cmpldi instead of li/cmpld
-#Patch557: 8168318-pr3466-rh1498320.patch
-# 8170328, PR3466, RH1498321: PPC64: Use andis instead of lis/and
-#Patch558: 8170328-pr3466-rh1498321.patch
-# 8181810, PR3466, RH1498319: PPC64: Leverage extrdi for bitfield extract
-#Patch559: 8181810-pr3466-rh1498319.patch
-
-# Aarch64 build fixes after January 2018 CPU
-#
-# JDK-8195685 AArch64 cannot build with JDK-8174962 (already included in source tarball)
-# JDK-8196136 AArch64: Correct register use in patch for JDK-8195685
-# JDK-8195859 AArch64: vtableStubs gtest fails after 8174962
-# JDK-8196221 AArch64: Mistake in committed patch for JDK-8195859
-#Patch570: JDK-8196136-correct-register-use-8195685.patch
-#Patch571: JDK-8195859-vtableStubs-gtest-fails-after-8174962.patch
-#Patch572: JDK-8196221-mistake-in-8195859.patch
-
-#Patch573: rhbz_1540242.patch
-#Patch574: rhbz_1540242_2.patch
-
+Patch540: rhbz1548475-LDFLAGSusage.patch
+# 8188030, PR3459, RH1484079: AWT java apps fail to start when some minimal fonts are present
+Patch560: 8188030-pr3459-rh1484079.patch
+# 8197429, PR3456, RH153662{2,3}: 32 bit java app started via JNI crashes with larger stack sizes
+Patch561: 8197429-pr3456-rh1536622.patch
+ 
 # Patches ineligible for 8u
 # 8043805: Allow using a system-installed libjpeg
 Patch201: system-libjpeg.patch
+Patch209: 8035496-hotspot.patch
+Patch210: suse_linuxfilestore.patch
 # custom securities
-Patch207: PR3183.patch
-# ustreamed aarch64 fixes
-#Patch208: aarch64BuildFailure.patch
-#Patch209: 8035496-hotspot.patch
-#Patch210: suse_linuxfilestore.patch
+Patch300: PR3183.patch
 
 # Local fixes
 # PR1834, RH1022017: Reduce curves reported by SSL to those in NSS
@@ -1174,11 +1165,12 @@ Patch525: pr1834-rh1022017.patch
 # PR2888: OpenJDK should check for system cacerts database (e.g. /etc/pki/java/cacerts)
 Patch539: pr2888.patch
 
+# Shenandoah fixes
+# PR3573: Fix TCK crash with Shenandoah
+#Patch700: pr3573.patch
+
 # Non-OpenJDK fixes
 Patch1000: enableCommentedOutSystemNss.patch
-
-# AArch32 fixes
-Patch1100: aarch32-8174962.patch
 
 BuildRequires: autoconf
 BuildRequires: automake
@@ -1209,8 +1201,8 @@ BuildRequires: xorg-x11-proto-devel
 BuildRequires: zip
 # Use OpenJDK 7 where available (on RHEL) to avoid
 # having to use the rhel-7.x-java-unsafe-candidate hack
-%if 0%{?rhel}
-BuildRequires: java-1.7.0-openjdk-devel
+%if ! 0%{?fedora} && 0%{?rhel} <= 7
+BuildRequires: java-1.7.0-openjdk-devel >= 1.7.0.151-2.6.11.3
 %else
 BuildRequires: java-1.8.0-openjdk-aarch32-devel
 %endif
@@ -1344,7 +1336,7 @@ The OpenJDK source bundle %{for_debug}.
 %package javadoc
 Summary: OpenJDK API Documentation
 Group:   Documentation
-Requires: javapackages-tools
+Requires: javapackages-filesystem
 BuildArch: noarch
 
 %{java_javadoc_rpo %{nil}}
@@ -1357,7 +1349,7 @@ The OpenJDK API documentation.
 %package javadoc-zip
 Summary: OpenJDK API Documentation compressed in single archive
 Group:   Documentation
-Requires: javapackages-tools
+Requires: javapackages-filesystem
 BuildArch: noarch
 
 %{java_javadoc_rpo %{nil}}
@@ -1370,7 +1362,7 @@ The OpenJDK API documentation compressed in single archive.
 %package javadoc-debug
 Summary: OpenJDK API Documentation %{for_debug}
 Group:   Documentation
-Requires: javapackages-tools
+Requires: javapackages-filesystem
 BuildArch: noarch
 
 %{java_javadoc_rpo -- %{debug_suffix_unquoted}}
@@ -1383,7 +1375,7 @@ The OpenJDK API documentation %{for_debug}.
 %package javadoc-zip-debug
 Summary: OpenJDK API Documentation compressed in single archive %{for_debug}
 Group:   Documentation
-Requires: javapackages-tools
+Requires: javapackages-filesystem
 BuildArch: noarch
 
 %{java_javadoc_rpo -- %{debug_suffix_unquoted}}
@@ -1517,10 +1509,10 @@ sh %{SOURCE12}
 %patch204
 %patch205
 %patch206
-%patch207
-#%patch208
-#%patch209
-#%patch210
+#%patch207
+%patch209
+%patch210
+%patch300
 
 %patch1
 %patch3
@@ -1532,8 +1524,10 @@ sh %{SOURCE12}
 #%patch102
 #%patch103
 
-# ppc64le fixes
+# AArch64 fixes
+#%patch104
 
+# ppc64le fixes
 #%patch603
 #%patch601
 #%patch602
@@ -1561,29 +1555,12 @@ sh %{SOURCE12}
 %patch526
 %patch528
 %patch538
-#%patch551
-#%patch553
+%patch540
 %patch560
 pushd openjdk/jdk
-%patch561 -p1
+%patch529 -p1
 popd
-
-# PPC64 updates
-#%patch556
-#%patch557
-#%patch558
-#%patch559
-
-#pushd openjdk/hotspot
-# Aarch64 build fixes after January 2018 CPU
-#%patch570 -p1
-#%patch571 -p1
-#%patch572 -p1
-
-# Zero/AArch64 fix for RHBZ#1540242
-#%patch573 -p1
-#%patch574 -p1
-#popd
+%patch561
 
 # RPM-only fixes
 %patch525
@@ -1594,10 +1571,12 @@ popd
 %patch534
 %endif
 
-%patch1000
+# Shenandoah-only patches
+%if %{use_shenandoah_hotspot}
+%patch700
+%endif
 
-# AArch32 fixes
-%patch1100
+%patch1000
 
 # Extract systemtap tapsets
 %if %{with_systemtap}
@@ -2277,6 +2256,10 @@ require "copy_jdk_configs.lua"
 %endif
 
 %changelog
+* Sun May 27 2018 Alex Kashchenko <akashche@redhat.com> - 1:1.8.0.171-1.180511
+- update sources to 8u171
+- sync with mainline package
+
 * Mon Mar 12 2018 Alex Kashchenko <akashche@redhat.com> - 1:1.8.0.161-1.180220
 - update sources to 8u161
 - sync with mainline package
