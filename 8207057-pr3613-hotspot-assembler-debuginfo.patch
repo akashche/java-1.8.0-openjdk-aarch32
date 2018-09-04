@@ -1,5 +1,5 @@
---- openjdk/hotspot/make/linux/makefiles/rules.make.orig	2016-12-06 12:25:19.099768390 -0500
-+++ openjdk/hotspot/make/linux/makefiles/rules.make	2016-12-06 12:25:42.449990112 -0500
+--- openjdk/hotspot/make/linux/makefiles/rules.make	2018-08-30 16:04:12.497865891 -0400
++++ openjdk/hotspot/make/linux/makefiles/rules.make	2018-08-30 16:06:16.371214049 -0400
 @@ -34,7 +34,7 @@
  CC_COMPILE       = $(CC) $(CXXFLAGS) $(CFLAGS)
  CXX_COMPILE      = $(CXX) $(CXXFLAGS) $(CFLAGS)
