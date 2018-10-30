@@ -105,7 +105,7 @@ diff --git openjdk.orig/hotspot/make/linux/makefiles/saproc.make openjdk/hotspot
 diff --git openjdk.orig/hotspot/make/linux/makefiles/vm.make openjdk/hotspot/make/linux/makefiles/vm.make
 --- openjdk.orig/hotspot/make/linux/makefiles/vm.make
 +++ openjdk/hotspot/make/linux/makefiles/vm.make
-@@ -130,7 +130,7 @@
+@@ -122,7 +122,7 @@
  
  # Extra flags from gnumake's invocation or environment
  CFLAGS += $(EXTRA_CFLAGS)

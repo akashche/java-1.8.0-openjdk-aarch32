@@ -71,7 +71,7 @@
 %global include_debug_build 0
 %endif
 
-# On x86_64 and AArch64, we use the Shenandoah HotSpot
+# Shenandoah HotSpot used everywhere, but built only on x86_64 and AArch64
 %ifarch x86_64 %{aarch64}
 %global use_shenandoah_hotspot 1
 %else
@@ -104,8 +104,8 @@
 
 
 # Filter out flags from the optflags macro that cause problems with the OpenJDK build
-# We filter out -O flags so that the optimization of HotSpot is not lowered from O3 to O2
 # We filter out -Wall which will otherwise cause HotSpot to produce hundreds of thousands of warnings (100+mb logs)
+# We filter out -O flags so that the optimization of HotSpot is not lowered from O3 to O2
 # We replace it with -Wformat (required by -Werror=format-security) and -Wno-cpp to avoid FORTIFY_SOURCE warnings
 # We filter out -fexceptions as the HotSpot build explicitly does -fno-exceptions and it's otherwise the default for C++
 %global ourflags %(echo %optflags | sed -e 's|-Wall|-Wformat -Wno-cpp|' | sed -r -e 's|-O[0-9]*||')
@@ -225,12 +225,13 @@
 %global origin_nice     OpenJDK
 %global top_level_dir_name   %{origin}
 # note, following three variables are sedded from update_sources if used correctly. Hardcode them rather there.
-%global project         aarch32-port
-%global repo            jdk8u
-%global revision        jdk8u181-b13-aarch32-180802
 %global shenandoah_project	aarch64-port
 %global shenandoah_repo		jdk8u-shenandoah
-%global shenandoah_revision    	aarch64-shenandoah-jdk8u181-b13
+%global shenandoah_revision		aarch64-shenandoah-jdk8u191-b12
+# Define old aarch64/jdk8u tree variables for compatibility
+%global project         aarch32-port
+%global repo            jdk8u
+%global revision        jdk8u191-b12-aarch32-181022
 
 # eg # jdk8u60-b27 -> jdk8u60 or # aarch64-jdk8u60-b27 -> aarch64-jdk8u60  (dont forget spec escape % by %%)
 %global whole_update    %(VERSION=%{revision}; echo ${VERSION%%-*})
@@ -242,7 +243,6 @@
 %global priority        %(TIP=1800%{updatever};  echo ${TIP/tip/999})
 
 %global javaver         1.%{majorver}.0
-%global systemtap_javaver 9
 
 # parametrized macros are order-sensitive
 %global compatiblename  %{name}
@@ -250,7 +250,7 @@
 # images stub
 %global jdkimage       j2sdk-image
 # output dir stub
-%define buildoutputdir() %{expand:openjdk/build/jdk8.build%{?1}}
+%define buildoutputdir() %{expand:%{top_level_dir_name}/build/jdk8.build%{?1}}
 # we can copy the javadoc to not arched dir, or make it not noarch
 %define uniquejavadocdir()    %{expand:%{fullversion}%{?1}}
 # main id and dir of this jdk
@@ -873,11 +873,15 @@ exit 0
 %define java_rpo() %{expand:
 Requires: fontconfig%{?_isa}
 Requires: xorg-x11-fonts-Type1
+# Require libXcomposite explicitly since it's only dynamically loaded
+# at runtime. Fixes screenshot issues. See JDK-8150954.
+Requires: libXcomposite%{?_isa}
 # Requires rest of java
 Requires: %{name}-headless%{?1}%{?_isa} = %{epoch}:%{version}-%{release}
 OrderWithRequires: %{name}-headless%{?1}%{?_isa} = %{epoch}:%{version}-%{release}
 # for java-X-openjdk package's desktop binding
 Recommends: gtk2%{?_isa}
+Suggests: cups
 
 #Provides: java-%{javaver}-%{origin} = %{epoch}:%{version}-%{release}
 
@@ -917,7 +921,7 @@ Requires(postun): %{_sbindir}/alternatives
 # in version 1.7 and higher for --family switch
 Requires(postun):   chkconfig >= 1.7
 # for optional support of kernel stream control, card reader and printing bindings
-Suggests: lksctp-tools%{?_isa}, pcsc-lite-devel%{?_isa}, cups
+Suggests: lksctp-tools%{?_isa}, pcsc-lite-devel%{?_isa}
 
 # Standard JPackage base provides
 #Provides: jre-headless%{?1} = %{epoch}:%{javaver}
@@ -1040,30 +1044,23 @@ Group:   Development/Languages
 License:  ASL 1.1 and ASL 2.0 and BSD and BSD with advertising and GPL+ and GPLv2 and GPLv2 with exceptions and IJG and LGPLv2+ and MIT and MPLv2.0 and Public Domain and W3C and zlib
 URL:      http://openjdk.java.net/
 
-# aarch64-port now contains integration forest of both aarch64 and normal jdk
-# Source from upstream OpenJDK8 project. To regenerate, use
-# VERSION=%%{revision} FILE_NAME_ROOT=%%{project}-%%{repo}-${VERSION}
-# REPO_ROOT=<path to checked-out repository> generate_source_tarball.sh
-# where the source is obtained from http://hg.openjdk.java.net/%%{project}/%%{repo}
-Source0: %{project}-%{repo}-%{revision}.tar.xz
-
 # Shenandoah HotSpot
 # aarch64-port/jdk8u-shenandoah contains an integration forest of
 # OpenJDK 8u, the aarch64 port and Shenandoah
 # To regenerate, use:
 # VERSION=%%{shenandoah_revision}
 # FILE_NAME_ROOT=%%{shenandoah_project}-%%{shenandoah_repo}-${VERSION}
-# REPO_ROOT=<path to checked-out repository> REPOS=hotspot generate_source_tarball.sh
+# REPO_ROOT=<path to checked-out repository> generate_source_tarball.sh
 # where the source is obtained from http://hg.openjdk.java.net/%%{project}/%%{repo}
+Source0: %{project}-%{repo}-%{revision}.tar.xz
 #Source1: {shenandoah_project}-{shenandoah_repo}-{shenandoah_revision}.tar.xz
 
 # Custom README for -src subpackage
 Source2:  README.md
 
-# Use 'generate_tarballs.sh' to generate the following tarballs
-# They are based on code contained in the IcedTea project (3.x)
 
-# Systemtap tapsets. Zipped up to keep it small.
+# run update_systemtap.sh to regenerate or update systemtap sources
+# update_package.sh contains hard-coded repos, revisions, tags, and projects to regenerate the source archives
 Source8: systemtap-tapset-3.4.0pre01.tar.xz
 
 # Desktop files. Adapted from IcedTea
@@ -1098,21 +1095,7 @@ Source101: config.sub
 # Ignore AWTError when assistive technologies are loaded 
 Patch1:   java-1.8.0-openjdk-accessible-toolkit.patch
 # Restrict access to java-atk-wrapper classes
-Patch3: java-atk-wrapper-security.patch
-
-#############################################
-#
-# Upstreamable patches
-#
-#############################################
-# PR2737: Allow multiple initialization of PKCS11 libraries
-Patch5: multiple-pkcs11-library-init.patch
-# PR2095, RH1163501: 2048-bit DH upper bound too small for Fedora infrastructure (sync with IcedTea 2.x)
-Patch504: rh1163501.patch
-# S4890063, PR2304, RH1214835: HPROF: default text truncated when using doe=n option
-Patch511: rh1214835.patch
-# Turn off strict overflow on IndicRearrangementProcessor{,2}.cpp following 8140543: Arrange font actions
-Patch512: no_strict_overflow.patch
+Patch3:   java-atk-wrapper-security.patch
 # Support for building the SunEC provider with the system NSS installation
 # PR1983: Support using the system installation of NSS with the SunEC provider
 # PR2127: SunEC provider crashes when built using system NSS
@@ -1127,10 +1110,20 @@ Patch516: pr2815.patch
 Patch517: pr2899.patch
 Patch518: pr2934.patch
 Patch519: pr3479-rh1486025.patch
-# S8150954, RH1176206, PR2866: Taking screenshots on x11 composite desktop produces wrong result
-# In progress: http://mail.openjdk.java.net/pipermail/awt-dev/2016-March/010742.html
-Patch508: rh1176206-jdk.patch
-Patch509: rh1176206-root.patch
+# PR3183, RH1340845: Support Fedora/RHEL8 system crypto policy
+Patch300: pr3183-rh1340845-system-crypto-policy.patch
+
+#############################################
+#
+# Upstreamable patches
+#
+#############################################
+# PR2737: Allow multiple initialization of PKCS11 libraries
+Patch5: multiple-pkcs11-library-init.patch
+# PR2095, RH1163501: 2048-bit DH upper bound too small for Fedora infrastructure (sync with IcedTea 2.x)
+Patch504: rh1163501.patch
+# Turn off strict overflow on IndicRearrangementProcessor{,2}.cpp following 8140543: Arrange font actions
+Patch512: no_strict_overflow.patch
 # RH1337583, PR2974: PKCS#10 certificate requests now use CRLF line endings rather than system line endings
 Patch523: pr2974-rh1337583.patch
 # PR3083, RH1346460: Regression in SSL debug output without an ECC provider
@@ -1139,25 +1132,11 @@ Patch528: pr3083-rh1346460.patch
 Patch529: rh1566890_embargoed20180521.patch
 # PR3601: Fix additional -Wreturn-type issues introduced by 8061651
 Patch530: pr3601.patch
-# PR3183: Support Fedora/RHEL system crypto policy
-Patch300: pr3183.patch
-
-#############################################
-#
-# Upstreamable debugging patches
-#
-#############################################
-# Patches 204 and 205 stop the build adding .gnu_debuglink sections to unstripped files
-# 8207234: More libraries with .gnu_debuglink sections added unconditionally
-Patch205: 8207234-dont-add-unnecessary-debug-links.patch
 
 # Arch-specific upstreamable patches
-# s390: PR2415: JVM -Xmx requirement is too high on s390
-Patch100: java-1.8.0-openjdk-s390-java-opts.patch
-# s390: Type fixing for s390
-Patch102: java-1.8.0-openjdk-size_t.patch
+
 # s390: PR3593: Use "%z" for size_t on s390 as size_t != intptr_t
-Patch103: pr3593-s390-size_t_format_flags.patch
+#Patch103: pr3593-s390-size_t_format_flags.patch
 # x86: S8199936, PR3533: HotSpot generates code with unaligned stack, crashes on SSE operations (-mstackrealign workaround)
 Patch105: 8199936-pr3533-workaround.patch
 # AArch64: PR3519: Fix further functions with a missing return value (AArch64)
@@ -1168,16 +1147,6 @@ Patch105: 8199936-pr3533-workaround.patch
 # Patches which need backporting to 8u
 #
 #############################################
-# S8073139, RH1191652; fix name of ppc64le architecture
-#Patch601: {name}-rh1191652-root.patch
-#Patch602: {name}-rh1191652-jdk.patch
-#Patch603: {name}-rh1191652-hotspot-aarch64.patch
-# Include all sources in src.zip
-Patch7: include-all-srcs.patch
-# 8035341: Allow using a system installed libpng
-Patch202: system-libpng.patch
-# 8042159: Allow using a system-installed lcms2
-Patch203: system-lcms.patch
 # S8074839, PR2462: Resolve disabled warnings for libunpack and the unpack200 binary
 # This fixes printf warnings that lead to build failure with -Werror=format-security from optflags
 Patch502: pr2462.patch
@@ -1205,10 +1174,23 @@ Patch575: 8197981-pr3548.patch
 Patch576: 8064786-pr3599.patch
 # 8062808, PR3548: Turn on the -Wreturn-type warning
 Patch577: 8062808-pr3548.patch
-# 8165852, PR3468: (fs) Mount point not found for a file which is present in overlayfs
-Patch210: 8165852-pr3468.patch
-# 8207057, PR3613: Enable debug information for assembly code files
-Patch206: 8207057-pr3613-hotspot-assembler-debuginfo.patch
+# s390: JDK-8203030, Type fixing for s390
+#Patch102: 8203030-size_t-fixes.patch
+# 8210761: libjsig is being compiled without optimization
+Patch620: 8210761-rh1630426-jsig-opt-fix.patch
+# 8210647: libsaproc is being compiled without optimization
+Patch621: 8210647-rh1630426-saproc-opt-fix.patch
+# 8210416: [linux] Poor StrictMath performance due to non-optimized compilation
+#Patch622: 8210416-rh1630426-strict-math-opt.patch
+# 8210425: [x86] sharedRuntimeTrig/sharedRuntimeTrans compiled without optimization
+#          Upstream 8u part.
+Patch623: 8210425-01-rh1630426-hotspot-opt-fix.patch
+# 8210425: [x86] sharedRuntimeTrig/sharedRuntimeTrans compiled without optimization
+#          Aarch64-port 8u local part
+#Patch624: 8210425-02-rh1630426-hotspot-opt-fix-aarch64.patch
+# 8210425: [x86] sharedRuntimeTrig/sharedRuntimeTrans compiled without optimization
+#          Zero part of the fix for (arm/s390 arches)
+#Patch625: 8210425-03-rh1630426-hotspot-opt-fix-zero.patch
 
 #############################################
 #
@@ -1216,9 +1198,9 @@ Patch206: 8207057-pr3613-hotspot-assembler-debuginfo.patch
 #
 #############################################
 # S8031668, PR2842: TOOLCHAIN_FIND_COMPILER unexpectedly resolves symbolic links
-Patch506: pr2842-01.patch
+Patch506: 8031668-pr2842-01.patch
 # S8148351, PR2842: Only display resolved symlink for compiler, do not change path
-Patch507: pr2842-02.patch
+Patch507: 8148351-pr2842-02.patch
 # S6260348, PR3066: GTK+ L&F JTextComponent not respecting desktop caret blink rate
 Patch526: 6260348-pr3066.patch
 # 8061305, PR3335, RH1423421: Javadoc crashes when method name ends with "Property"
@@ -1226,28 +1208,45 @@ Patch538: 8061305-pr3335-rh1423421.patch
 # 8188030, PR3459, RH1484079: AWT java apps fail to start when some minimal fonts are present
 Patch560: 8188030-pr3459-rh1484079.patch
 # 8205104, PR3539, RH1548475: Pass EXTRA_LDFLAGS to HotSpot build
-Patch562: pr3539-rh1548475.patch
+Patch562: 8205104-pr3539-rh1548475.patch
 # 8185723, PR3553: Zero: segfaults on Power PC 32-bit
 Patch565: 8185723-pr3553.patch
 # 8186461, PR3557: Zero's atomic_copy64() should use SPE instructions on linux-powerpcspe
 Patch566: 8186461-pr3557.patch
 # 8201509, PR3579: Zero: S390 31bit atomic_copy64 inline assembler is wrong
 Patch569: 8201509-pr3579.patch
-# 8165489, PR3589: Missing G1 barrier in Unsafe_GetObjectVolatile
-Patch570: 8165489-pr3589.patch
-# 8196516, RH1538767: libfontmanager.so needs to be built with LDFLAGS so as to allow
-#                     linking with unresolved symbols.
-Patch531: 8196516-pr3523-rh1538767.patch
 # 8075942, PR3602: ArrayIndexOutOfBoundsException in sun.java2d.pisces.Dasher.goTo
 Patch578: 8075942-pr3602-rh1582032.patch
 # 8203182, PR3603: Release session if initialization of SunPKCS11 Signature fails
 Patch579: 8203182-pr3603-rh1568033.patch
 # 8206406, PR3610, RH1597825: StubCodeDesc constructor publishes partially-constructed objects on StubCodeDesc::_list
 Patch580: 8206406-pr3610-rh1597825.patch
-# 8146115, PR3508, RH1463098: Improve docker container detection and resource configuration usage
-Patch581: 8146115-pr3508-rh1463098.patch
+# Patches 204 and 205 stop the build adding .gnu_debuglink sections to unstripped files
 # 8206425: .gnu_debuglink sections added unconditionally when no debuginfo is stripped
 Patch204: 8206425-hotspot-remove-debuglink.patch
+# 8036003: Add --with-native-debug-symbols=[none|internal|external|zipped]
+Patch205: 8036003-add-with-native-debug-symbols-configure-flag.patch
+# s390: JDK-8201495, PR2415: JVM -Xmx requirement is too high on s390
+#Patch100: 8201495-s390-java-opts.patch
+
+#############################################
+#
+# Patches appearing in 8u202
+#
+#############################################
+# S8150954, RH1176206, PR2866: Taking screenshots on x11 composite desktop produces wrong result
+Patch508: 8150954-pr2866-rh1176206-screenshot-xcomposite-jdk.patch
+# 8207057, PR3613: Enable debug information for assembly code files
+Patch206: 8207057-pr3613-assembler-debuginfo-hotspot.patch
+Patch207: 8207057-pr3613-assembler-debuginfo-root.patch
+# 8165852, PR3468: (fs) Mount point not found for a file which is present in overlayfs
+Patch210: 8165852-pr3468.patch
+# S8073139, RH1191652; fix name of ppc64le architecture
+#Patch601: 8073139-rh1191652-root.patch
+#Patch602: 8073139-rh1191652-jdk.patch
+#Patch603: 8073139-rh1191652-hotspot-aarch64.patch
+# 8044235: src.zip should include all sources
+Patch7:   8044235-include-all-srcs.patch
 
 #############################################
 #
@@ -1256,6 +1255,10 @@ Patch204: 8206425-hotspot-remove-debuglink.patch
 #############################################
 # 8043805: Allow using a system-installed libjpeg
 Patch201: system-libjpeg.patch
+# 8035341: Allow using a system installed libpng
+Patch202: system-libpng.patch
+# 8042159: Allow using a system-installed lcms2
+Patch203: system-lcms.patch
 
 #############################################
 #
@@ -1270,6 +1273,10 @@ Patch525: pr1834-rh1022017.patch
 Patch539: pr2888.patch
 # PR3575, RH1567204: System cacerts database handling should not affect jssecacerts
 Patch540: pr3575-rh1567204.patch
+
+# Shenandoah fixes
+# PR3634: Shenandoah still broken on s390 with aarch64-shenandoah-jdk8u181-b16
+#Patch582: pr3634.patch
 
 #############################################
 #
@@ -1306,6 +1313,7 @@ BuildRequires: nss-devel
 BuildRequires: pkgconfig
 BuildRequires: xorg-x11-proto-devel
 BuildRequires: zip
+BuildRequires: unzip
 # Use OpenJDK 7 where available (on RHEL) to avoid
 # having to use the rhel-7.x-java-unsafe-candidate hack
 %if ! 0%{?fedora} && 0%{?rhel} <= 7
@@ -1345,7 +1353,7 @@ Group:   Development/Languages
 
 %{java_rpo -- %{debug_suffix_unquoted}}
 %description slowdebug
-The %{origin_nice} runtime environment.
+The %{origin_nice} runtime environment %{majorver}.
 %{debug_warning}
 %endif
 
@@ -1362,7 +1370,7 @@ The %{origin_nice} runtime environment %{majorver} without audio and video suppo
 
 %if %{include_debug_build}
 %package headless-slowdebug
-Summary: %{origin_nice} Runtime Environment %{debug_on}
+Summary: %{origin_nice} Runtime Environment %{majorver} %{debug_on}
 Group:   Development/Languages
 
 %{java_headless_rpo -- %{debug_suffix_unquoted}}
@@ -1584,17 +1592,7 @@ if [ $prioritylength -ne 7 ] ; then
  exit 14
 fi
 # For old patches
-ln -s openjdk jdk8
-%if %{use_shenandoah_hotspot}
-# On Shenandoah-supported architectures, replace HotSpot with
-# the Shenandoah version
-pushd openjdk
-tar -xf %{SOURCE1}
-rm -rf hotspot
-mv openjdk/hotspot .
-rm -rf openjdk
-popd
-%endif
+ln -s %{top_level_dir_name} jdk8
 
 cp %{SOURCE2} .
 
@@ -1602,8 +1600,8 @@ cp %{SOURCE2} .
 #
 # the configure macro will do this too, but it also passes a few flags not
 # supported by openjdk configure script
-cp %{SOURCE100} openjdk/common/autoconf/build-aux/
-cp %{SOURCE101} openjdk/common/autoconf/build-aux/
+cp %{SOURCE100} %{top_level_dir_name}/common/autoconf/build-aux/
+cp %{SOURCE101} %{top_level_dir_name}/common/autoconf/build-aux/
 
 # OpenJDK patches
 
@@ -1619,6 +1617,7 @@ sh %{SOURCE12}
 %patch204
 %patch205
 %patch206
+%patch207
 %patch210
 
 %patch300
@@ -1629,9 +1628,9 @@ sh %{SOURCE12}
 %patch7
 
 # s390 build fixes
-%patch100
-%patch102
-%patch103
+#%patch100
+#%patch102
+#%patch103
 
 # AArch64 fixes
 #%patch106
@@ -1650,8 +1649,6 @@ sh %{SOURCE12}
 %patch506
 %patch507
 %patch508
-%patch509
-%patch511
 %patch512
 %patch513
 %patch514
@@ -1668,9 +1665,6 @@ sh %{SOURCE12}
 %patch530
 %patch538
 %patch560
-pushd openjdk/jdk
-%patch531 -p1
-popd
 %patch561
 %patch562
 %patch563
@@ -1689,7 +1683,12 @@ popd
 %patch578
 %patch579
 %patch580
-%patch581
+%patch620
+%patch621
+#%patch622
+%patch623
+#%patch624
+#%patch625
 
 # RPM-only fixes
 %patch525
@@ -1701,17 +1700,14 @@ popd
 %patch534
 %endif
 
-# Shenandoah-only patches
-%if %{use_shenandoah_hotspot}
-%else
-%patch570
-%endif
+# Shenandoah patches
+#%patch582
 
 %patch1000
 
 # Extract systemtap tapsets
 %if %{with_systemtap}
-tar -x -I xz -f %{SOURCE8}
+tar --strip-components=1 -x -I xz -f %{SOURCE8}
 %if %{include_debug_build}
 cp -r tapset tapset%{debug_suffix}
 %endif
@@ -1719,7 +1715,7 @@ cp -r tapset tapset%{debug_suffix}
 
 for suffix in %{build_loop} ; do
   for file in "tapset"$suffix/*.in; do
-    OUTPUT_FILE=`echo $file | sed -e "s:%{systemtap_javaver}\.stp\.in$:%{version}-%{release}.%{_arch}.stp:g"`
+    OUTPUT_FILE=`echo $file | sed -e "s:\.stp\.in$:%{version}-%{release}.%{_arch}.stp:g"`
     sed -e "s:@ABS_SERVER_LIBJVM_SO@:%{_jvmdir}/%{sdkdir -- $suffix}/jre/lib/%{archinstall}/server/libjvm.so:g" $file > $file.1
 # TODO find out which architectures other than i686 have a client vm
 %ifarch %{ix86}
@@ -1745,7 +1741,7 @@ for file in %{SOURCE9} %{SOURCE10} ; do
     sed    -e  "s:@JAVA_HOME@:%{sdkbindir -- $suffix}:g" $file > $OUTPUT_FILE
     sed -i -e  "s:@JRE_HOME@:%{jrebindir -- $suffix}:g" $OUTPUT_FILE
     sed -i -e  "s:@ARCH@:%{version}-%{release}.%{_arch}$suffix:g" $OUTPUT_FILE
-    sed -i -e  "s:@JAVA_MAJOR_VERSION@:%{majorver}:g" $OUTPUT_FILE
+    sed -i -e  "s:@JAVA_MAJOR_VERSION@:%{javaver}:g" $OUTPUT_FILE
     sed -i -e  "s:@JAVA_VENDOR@:%{origin}:g" $OUTPUT_FILE
 done
 done
@@ -1804,7 +1800,7 @@ NSS_LIBS="%{NSS_LIBS} -lfreebl" \
 NSS_CFLAGS="%{NSS_CFLAGS}" \
 bash ../../configure \
     --with-jvm-variants=client \
-    --disable-zip-debug-info \
+    --with-native-debug-symbols=internal \
     --with-milestone="fcs" \
     --with-update-version=%{updatever} \
     --with-build-number=%{buildver} \
@@ -1826,16 +1822,8 @@ bash ../../configure \
 cat spec.gmk
 cat hotspot-spec.gmk
 
-# The combination of FULL_DEBUG_SYMBOLS=0 and ALT_OBJCOPY=/does_not_exist
-# disables FDS for all build configs and reverts to pre-FDS make logic.
-# STRIP_POLICY=none says don't do any stripping. DEBUG_BINARIES=true says
-# ignore all the other logic about which debug options and just do '-g'.
-
 make \
-    DEBUG_BINARIES=true \
     JAVAC_FLAGS=-g \
-    STRIP_POLICY=no_strip \
-    POST_STRIP_CMD="" \
     LOG=trace \
     SCTP_WERROR= \
     %{targets} || ( pwd; find $top_dir_abs_path -name "hs_err_pid*.log" | xargs cat && false )
@@ -2046,7 +2034,7 @@ cp -a %{buildoutputdir -- $suffix}/bundles/$built_doc_archive  $RPM_BUILD_ROOT%{
 # Install icons and menu entries
 for s in 16 24 32 48 ; do
   install -D -p -m 644 \
-    openjdk/jdk/src/solaris/classes/sun/awt/X11/java-icon${s}.png \
+    %{top_level_dir_name}/jdk/src/solaris/classes/sun/awt/X11/java-icon${s}.png \
     $RPM_BUILD_ROOT%{_datadir}/icons/hicolor/${s}x${s}/apps/java-%{javaver}-%{origin}.png
 done
 
@@ -2403,6 +2391,10 @@ require "copy_jdk_configs.lua"
 %endif
 
 %changelog
+* Tue Oct 30 2018 Alex Kashchenko <akashche@redhat.com> - 1:1.8.0.191-1.181022
+- update sources to 8u191
+- sync with mainline package
+
 * Thu Aug 30 2018 Alex Kashchenko <akashche@redhat.com> - 1:1.8.0.181-1.180802
 - update sources to 8u181
 - sync with mainline package
