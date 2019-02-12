@@ -99,6 +99,7 @@ if [ ! -d ${LCMS_SRC} ]; then
 fi
 # temporary change to move bundled LCMS
 if [ ! true ]; then
+rm -vf ${LCMS_SRC}/cmsalpha.c
 rm -vf ${LCMS_SRC}/cmscam02.c
 rm -vf ${LCMS_SRC}/cmscgats.c
 rm -vf ${LCMS_SRC}/cmscnvrt.c
@@ -128,3 +129,10 @@ rm -vf ${LCMS_SRC}/lcms2.h
 rm -vf ${LCMS_SRC}/lcms2_internal.h
 rm -vf ${LCMS_SRC}/lcms2_plugin.h
 fi
+
+# Get rid of in-tree SunEC until RH1656676 is implemented
+echo "Removing SunEC native code"
+mv -v openjdk/jdk/src/share/native/sun/security/ec/impl/ecc_impl.h .
+rm -vrf openjdk/jdk/src/share/native/sun/security/ec/impl
+mkdir openjdk/jdk/src/share/native/sun/security/ec/impl
+mv -v ecc_impl.h openjdk/jdk/src/share/native/sun/security/ec/impl
